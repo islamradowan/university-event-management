@@ -1,0 +1,86 @@
+use these only tailwindcss@^3 + vue 2 + laravel 10 + mysql
+
+** this is my project details **
+--------------------------------------------------------------
+"🎯 Objective Develop a full-featured web-based University Event Management System where:  
+Students can browse, register for, and attend events.  
+Organizers (e.g., club managers) can create and manage events.  
+Admins can oversee everything.  
+
+📋 PHASE 1: REQUIREMENT ANALYSIS 
+1. Identify the users/roles 
+  Student: Register, join events, receive reminders, 
+  Club Manager/Organizer: Create/edit events, manage registrations, 
+  Admin: Full control (approve events, manage users, moderate content) 
+2. Functional Requirements 
+  User authentication + role-based access,  
+  Event creation & approval workflow, 
+  Event listing, 
+  registration & QR check-in , 
+  Notifications (email & in-app), 
+  Event calendar view, 
+  Feedback system, 
+  Admin dashboard with analytics, 
+  Media uploads (event posters/photos),  
+  Search & filter system, 
+
+🧱 PHASE 2: SYSTEM DESIGN & DATABASE
+1. Tech Stack Layer	Tech 
+  Backend	Laravel 10 (PHP) 
+  Frontend	vue 2 + Tailwind CSS @3 (Alpine.js optional) 
+  Database	MySQL 
+  File Storage	Laravel Storage local 
+  Notifications	Laravel Mail (SMTP), 
+  optional Push Optional	Livewire / Vue.js (for interactivity)
+2. Database Schema (Simplified) 
+  Tables: users — id, name, email, password, role (student, manager, admin) 
+  events — id, title, description, date, time, location, status (pending/approved), created_by 
+  event_registrations — id, user_id, event_id, qr_token, checked_in_at 
+  feedback — id, event_id, user_id, rating, 
+  comment notifications — id, user_id, title, body, read_at 
+  event_media — id, event_id, file_path, type (poster/gallery) 
+
+🧩 PHASE 3: FEATURE DEVELOPMENT 
+🔐 1. User Management for auth (login/register/forgot)  
+  Middleware-based Role system (isAdmin, isOrganizer, isStudent) 
+  Admin-only user list with role management 
+📅 2. Event Management 
+For Organizers:  
+  Create event (title, description, schedule, poster) 
+  Edit/delete event (if not yet started) 
+  View registration list  
+For Admins:  
+  Approve/Reject events 
+  View User
+  Feature events on homepage 
+For Students: 
+  Browse upcoming/past 
+  events  Filter by date/category 
+  Register (auto-generate QR code)  
+  Unregister (before deadline) 
+📥 3. Registration System 
+  One-click register 
+  QR code generated per user per event  
+  View registered events in "My Events" section 
+📲 4. Notification System 
+  Email confirmation on registration 
+  Admin announcement broadcast  
+  Optional SMS / push via OneSignal or Pusher 
+🗓 5. Calendar View Month/week view of events using FullCalendar.js 
+📊 6. Admin Dashboard Metrics: 
+  total events, total users, feedback Export CSV of registrations  
+  Logs of system activity 
+📷 7. Media Gallery 
+  Upload event posters  
+  Upload gallery images post-event 
+📝 8. Feedback System After attending, 
+  student can leave rating/comment 
+  Admin can see average rating per event  
+
+💄 PHASE 4: FRONTEND 
+UI/UX Tailwind CSS for clean, mobile-friendly layout  
+Navigation bar with dynamic options based on role Event cards with filters: by date, club, popularity  
+Modal forms for registration and feedback 
+Responsive design for mobile + desktop   "
+
+use these only tailwindcss@^3 + vue 2 + laravel 10 + mysql
