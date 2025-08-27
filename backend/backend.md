@@ -225,12 +225,10 @@ return new class extends Migration
 These are my models files
 --------------------------------------------------------------------------
  app/Models/Event.php
-
 <?php
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -238,28 +236,50 @@ class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title','slug','description','start_at','end_at','location','category','status','organizer_id','poster_path','capacity','featured'];
+    protected $fillable = [
+        'title',
+        'slug',
+        'description',
+        'start_at',
+        'end_at',
+        'location',
+        'category',
+        'status',
+        'organizer_id',
+        'poster_path',
+        'capacity',
+        'featured'
+    ];
 
-    protected $dates = ['start_at','end_at'];
+    // Use casts in Laravel 10
+    protected $casts = [
+        'start_at' => 'datetime',
+        'end_at'   => 'datetime',
+    ];
 
-    public function organizer() {
+    public function organizer()
+    {
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
-    public function registrations() {
+    public function registrations()
+    {
         return $this->hasMany(EventRegistration::class);
     }
 
-    public function media() {
+    public function media()
+    {
         return $this->hasMany(EventMedia::class);
     }
 
-    public function feedbacks() {
+    public function feedbacks()
+    {
         return $this->hasMany(Feedback::class);
     }
 }
 
-and  app/Models/EventRegistration.php
+
+ app/Models/EventRegistration.php
 <?php
 
 namespace App\Models;
@@ -385,7 +405,7 @@ class EventMedia extends Model
     protected $fillable = [
         'event_id',
         'type',       // 'image', 'video', 'document'
-        'path',       // storage path
+        'poster_path',       // storage path
         'caption'
     ];
 
@@ -394,6 +414,7 @@ class EventMedia extends Model
         return $this->belongsTo(Event::class);
     }
 }
+
 -------------------------------------------------------------------------
 
 These are my factory files
@@ -697,6 +718,7 @@ class AuthController extends Controller
 }
 
 app/Http/Controllers/API/EventController.php
+
 <?php
 
 namespace App\Http\Controllers\API;
@@ -707,10 +729,11 @@ use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $events = Event::with(['organizer','media','registrations'])->get();
         return response()->json($events);
+        // return Event::all();
     }
 
     public function show(Event $event)
@@ -718,6 +741,15 @@ class EventController extends Controller
         $event->load(['organizer','media','registrations','feedbacks']);
         return response()->json($event);
     }
+
+    public function myEvents(Request $request)
+{
+    $user = $request->user();
+    return Event::with('registrations', 'feedbacks')
+                ->where('organizer_id', $user->id)
+                ->orderByDesc('start_at')
+                ->get();
+}
 
     public function store(Request $request)
     {
@@ -739,7 +771,7 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        $this->authorize('update',$event); // optional: use policy
+        // $this->authorize('update',$event); // optional: use policy
         $data = $request->validate([
             'title'=>'sometimes|required|string|max:255',
             'description'=>'nullable|string',
@@ -763,6 +795,7 @@ class EventController extends Controller
         return response()->json(['message'=>'Deleted']);
     }
 }
+
 
 app/Http/Controllers/API/EventRegistrationController.php
 <?php
@@ -893,45 +926,60 @@ use App\Http\Controllers\API\NotificationController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-//test start
-// Route::get('/user', function() {
-//     return response()->json(['message' => 'API works']);
+
+// //login, register and logout
+// Route::post('/register', [AuthController::class,'register']);
+// Route::post('/login', [AuthController::class,'login']);
+// Route::post('/logout', [AuthController::class,'logout'])->middleware('auth:sanctum');
+
+
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
 // });
 
-// Route::get('/login', function () {
-//     return 'Web login page';
-// })->name('login');
-// //test end
 
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-//login, register and logout
+// Public auth
 Route::post('/register', [AuthController::class,'register']);
 Route::post('/login', [AuthController::class,'login']);
 Route::post('/logout', [AuthController::class,'logout'])->middleware('auth:sanctum');
-Route::get('/user', [AuthController::class,'me'])->middleware('auth:sanctum');
 
-// Event routes (CRUD)
-Route::middleware('auth:sanctum')->group(function(){
-    Route::get('/events','API\EventController@index');
-    Route::get('/events/{event}','API\EventController@show');
-    Route::post('/events','API\EventController@store'); // organizer only (use role middleware)
-    Route::put('/events/{event}','API\EventController@update');
-    Route::delete('/events/{event}','API\EventController@destroy');
 
-    Route::post('/events/{event}/register','API\EventRegistrationController@register');
-    Route::post('/registrations/{registration}/checkin','API\EventRegistrationController@checkIn');
-    Route::get('/my-registrations','API\EventRegistrationController@myRegistrations');
-
-    Route::post('/events/{event}/feedback','API\FeedbackController@submit');
-    Route::get('/events/{event}/feedbacks','API\FeedbackController@list');
-
-    Route::get('/notifications','API\NotificationController@index');
-    Route::post('/notifications/{notification}/read','API\NotificationController@markRead');
+// Read: all events for authenticated users
+Route::middleware(['auth:sanctum', 'role:organizer,admin'])->group(function () {
+    Route::get('/my-events', [\App\Http\Controllers\API\EventController::class, 'myEvents']);
 });
+
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', fn (Request $request) => $request->user());
+
+    // Read: all authenticated users
+    Route::get('/events', [\App\Http\Controllers\API\EventController::class, 'index']);
+    Route::get('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'show']);
+
+    // Write: organizers/admins only
+    Route::post('/events', [\App\Http\Controllers\API\EventController::class, 'store'])->middleware('role:organizer,admin');
+    Route::put('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'update'])->middleware('role:organizer,admin');
+    // Route::put('/events/{event}', 'API\EventController@update')
+    // ->middleware('role:organizer,admin');
+    Route::delete('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'destroy'])->middleware('role:organizer,admin');
+
+    // Registrations & attendance
+    Route::post('/events/{event}/register', [\App\Http\Controllers\API\EventRegistrationController::class, 'register']);
+    Route::post('/registrations/{registration}/checkin', [\App\Http\Controllers\API\EventRegistrationController::class, 'checkIn'])->middleware('role:organizer,admin');
+    Route::get('/my-registrations', [\App\Http\Controllers\API\EventRegistrationController::class, 'myRegistrations']);
+
+    // Feedback
+    Route::post('/events/{event}/feedback', [\App\Http\Controllers\API\FeedbackController::class, 'submit']);
+    Route::get('/events/{event}/feedbacks', [\App\Http\Controllers\API\FeedbackController::class, 'list']);
+
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\API\NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\API\NotificationController::class, 'markRead']);
+});
+
 --------------------------------------------------------------------------
 
 This is my config/cors.php file
@@ -953,7 +1001,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [env('CLIENT_URL', 'http://localhost:8080')],
     'allowed_origins_patterns' => [],
@@ -962,6 +1010,7 @@ return [
     'max_age' => 0,
     'supports_credentials' => true,
 ];
+
 -------------------------------------------------------------------------
 
 This is my config/sanctum.php file
@@ -1119,8 +1168,10 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
     ];
 }
+
 -----------------------------------------------------------------------
 
 This is my app/Http/Middleware/Authenticate.php file
@@ -1162,10 +1213,16 @@ class RoleMiddleware
 {
     public function handle($request, Closure $next, ...$roles)
     {
+        // Accept both: role:admin,organizer  or role:admin organizer
+        if (count($roles) === 1 && strpos($roles[0], ',') !== false) {
+            $roles = array_map('trim', explode(',', $roles[0]));
+        }
+
         $user = $request->user();
-        if (!$user || !in_array($user->role, $roles, true)) {
+            if (!$user || !in_array(strtolower($user->role), array_map('strtolower', $roles))) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
+
         return $next($request);
     }
 }

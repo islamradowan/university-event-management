@@ -24,14 +24,29 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'OrganizerEventDetails',
   components: { Navbar, Footer },
   data() {
-    return {
-      event: { id:this.$route.params.id, title:'Web Dev Workshop', date:'2025-08-25', location:'Lab 3' },
-      attendees: [ { name:'Rashed', email:'rashed@example.com', checked_in:false } ]
+    return { event: null, attendees: [] }
+  },
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    this.event = apiEventToView(apiEvent)
+    // assumes backend loads registrations with user relationship
+    this.attendees = (apiEvent.registrations || []).map(r => ({
+      name: r.user?.name || '-',
+      email: r.user?.email || '-',
+      checked_in: !!r.checked_in_at,
+      id: r.id
+    }))
+  },
+  methods: {
+    async markCheckIn(reg) {
+      await this.$store.dispatch('checkIn', reg.id)
+      reg.checked_in = true
     }
   }
 }

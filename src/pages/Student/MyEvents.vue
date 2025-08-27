@@ -21,13 +21,22 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'MyEvents',
   components: { Navbar, Footer },
-  data() { return { myEvents: [ {id:1, title:'AI Ethics Seminar', date:'2025-09-10', location:'Auditorium A'} ] } },
+  data() { return { myEvents: [] } },
+  async created() {
+    const regs = await this.$store.dispatch('fetchMyRegistrations')
+    // assume API returns registrations with nested event
+    this.myEvents = regs.map(r => apiEventToView(r.event))
+  },
   methods: {
-    showQR(e) { alert(`QR for event ${e.id} (demo)`) }
+    showQR(reg) {
+      // If backend returns `qr_token` on registration, display/QR-encode it.
+      alert(`QR token: ${reg.qr_token || 'N/A'}`)
+    }
   }
 }
 </script>

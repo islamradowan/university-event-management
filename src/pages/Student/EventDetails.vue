@@ -20,29 +20,28 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'StudentEventDetails',
   components: { Navbar, Footer },
   data() {
-    return { event: { id:this.$route.params.id, title:'Loading...', date:'', time:'', location:'', description:'' } }
+     return { event: null }
   },
-  created() {
-    // TODO: fetch /api/events/:id
-    // demo payload:
-    this.event = { id:this.$route.params.id, title:'AI Ethics Seminar', date:'2025-09-10', time:'15:00', location:'Auditorium A', description:'Long description...' }
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    this.event = apiEventToView(apiEvent)
   },
   methods: {
     async register() {
       try {
-        // POST /api/events/:id/register
-        await this.$http.post(`/api/events/${this.event.id}/register`)
-        alert('Registered (demo)')
+        await this.$store.dispatch('registerForEvent', this.event.id)
+        alert('Registered! Check “My Events”.')
       } catch (err) {
-        console.error(err); alert('Register failed (demo)')
+        console.error(err); alert('Register failed')
       }
     },
-    addCalendar() { alert('Add to calendar (demo)') }
+    addCalendar() { /* optional */ }
   }
 }
 </script>

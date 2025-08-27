@@ -26,6 +26,7 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { formToEventPayload } from '@/utils/apiMappers'
 
 export default {
   name: 'CreateEvent',
@@ -36,12 +37,12 @@ export default {
   methods: {
     async create() {
       try {
-        // POST /api/events (multipart if includes poster)
-        await this.$http.post('/api/events', this.form)
-        alert('Event created (demo)')
+        await this.$http.post('/api/events', formToEventPayload(this.form))
+        alert('Event created')
         this.$router.push('/organizer/dashboard')
       } catch (err) {
-        console.error(err); alert('Create failed (demo)')
+        console.error(err)
+        alert('Create failed')
       }
     }
   }

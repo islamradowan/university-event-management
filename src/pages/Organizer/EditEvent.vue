@@ -27,6 +27,7 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView, formToEventPayload } from '@/utils/apiMappers'
 
 export default {
   name: 'EditEvent',
@@ -34,19 +35,26 @@ export default {
   data() {
     return { form: { title:'', date:'', time:'', location:'', category:'Workshop', description:'' } }
   },
-  created() {
-    // TODO: fetch /api/events/:id to prefill
-    // demo:
-    this.form = { title:'Web Dev Workshop', date:'2025-08-25', time:'10:00', location:'Lab 3', category:'Workshop', description:'Existing description' }
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    const view = apiEventToView(apiEvent)
+    this.form = {
+      title: view.title,
+      date: view.date,
+      time: view.time,
+      location: view.location || '',
+      category: view.category || 'Workshop',
+      description: view.description || ''
+    }
   },
   methods: {
     async save() {
       try {
-        // PUT /api/events/:id
-        await this.$http.put(`/api/events/${this.$route.params.id}`, this.form)
-        alert('Saved (demo)')
+        const payload = formToEventPayload(this.form)
+        await this.$store.dispatch('updateEvent', { id: this.$route.params.id, payload })
+        alert('Saved')
         this.$router.push('/organizer/dashboard')
-      } catch (err) { console.error(err); alert('Save failed (demo)') }
+      } catch (err) { console.error(err); alert('Save failed') }
     }
   }
 }

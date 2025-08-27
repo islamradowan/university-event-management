@@ -46,11 +46,13 @@ export default {
   name: 'PublicLanding',
   components: { Navbar, Footer, EventCard },
   data() {
-    return {
-      events: [
-        { id:1, title:'AI Ethics Seminar', date:'2025-09-10', time:'15:00', location:'Auditorium A', description:'A talk about ethics in AI.', category:'Seminar', status:'approved' },
-        { id:2, title:'Cultural Night', date:'2025-09-20', time:'19:30', location:'Main Stage', description:'Music and dance.', category:'Cultural', status:'approved' }
-      ]
+    return { events: [], loading: true }
+  },
+  async created() {
+    try {
+      this.events = await this.$store.dispatch('fetchPublicEvents')
+    } finally {
+      this.loading = false
     }
   }
 }

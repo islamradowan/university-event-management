@@ -30,14 +30,31 @@ export default {
   methods: {
     async login() {
       try {
-        const res = await this.$http.post('/api/login', { 
+        // 1. Hit Laravel Sanctum login endpoint
+        await this.$http.post('/api/login', { 
           email: this.email, 
           password: this.password 
         })
-        // handle token & redirect by role
-        console.log('logged in:', res.data)
+
+        // 2. Get authenticated user data from backend
+        await this.$store.dispatch('fetchUser')
+
+        // 3. Redirect based on role
+        const role = this.$store.getters.userRole
+        if (role === 'admin') {
+          this.$router.push('/admin/dashboard')
+        } else if (role === 'organizer') {
+          this.$router.push('/organizer/dashboard')
+        } else if (role === 'student') {
+          this.$router.push('/student/dashboard')
+        } else {
+          // fallback if role not found
+          this.$router.push('/')
+        }
+
       } catch (err) {
         console.error(err.response?.data || err.message)
+        // optionally show a toast / error message
       }
     }
   }

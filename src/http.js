@@ -1,4 +1,3 @@
-// src/http.js
 import axios from 'axios'
 
 // .env in Vue: VUE_APP_API_BASE=http://localhost:8000 (or leave default below)
@@ -6,7 +5,7 @@ const API_BASE = process.env.VUE_APP_API_BASE || 'http://localhost:8000'
 
 // Create Axios instance
 const http = axios.create({
-  baseURL: API_BASE,
+  baseURL: process.env.VUE_APP_API_BASE,
   withCredentials: true // send cookies
 })
 

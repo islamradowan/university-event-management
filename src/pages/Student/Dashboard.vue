@@ -19,28 +19,26 @@
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
 import EventCard from '@/components/EventCard.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'StudentDashboard',
   components: { Navbar, Footer, EventCard },
   data() {
-    return {
-      events: [
-        { id:1, title:'AI Ethics Seminar', date:'2025-09-10', time:'15:00', location:'Auditorium A', description:'Ethics in AI', category:'Seminar', status:'approved' },
-        { id:3, title:'Web Dev Workshop', date:'2025-08-25', time:'10:00', location:'Lab 3', description:'Hands on web dev', category:'Workshop', status:'pending' }
-      ],
-      q: ''
-    }
+    return { events: [], q: '' }
+  },
+  async created() {
+    const apiEvents = await this.$store.dispatch('fetchEvents')
+    this.events = apiEvents.map(apiEventToView)
+    console.log(this.events)
   },
   computed: {
     filtered() {
       if (!this.q) return this.events
       const q = this.q.toLowerCase()
-      return this.events.filter(e => (e.title+e.description+e.location).toLowerCase().includes(q))
+      return this.events.filter(e => (e.title + e.description + e.location).toLowerCase().includes(q))
     }
   },
-  methods: {
-    onSearch(q) { this.q = q }
-  }
+  methods: { onSearch(q) { this.q = q } }
 }
 </script>

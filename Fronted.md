@@ -401,7 +401,7 @@ export default {
 
 /pages/Organizer/CreateEvent.vue
 --------------------------------------------------------------------
-      <template>
+<template>
   <div>
     <Navbar />
     <main class="max-w-3xl mx-auto p-6">
@@ -429,6 +429,7 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { formToEventPayload } from '@/utils/apiMappers'
 
 export default {
   name: 'CreateEvent',
@@ -439,17 +440,18 @@ export default {
   methods: {
     async create() {
       try {
-        // POST /api/events (multipart if includes poster)
-        await this.$http.post('/api/events', this.form)
-        alert('Event created (demo)')
+        await this.$http.post('/api/events', formToEventPayload(this.form))
+        alert('Event created')
         this.$router.push('/organizer/dashboard')
       } catch (err) {
-        console.error(err); alert('Create failed (demo)')
+        console.error(err)
+        alert('Create failed')
       }
     }
   }
 }
 </script>
+
 -----------------------------------------------------------------
 
 /pages/Organizer/Dashboard.vue
@@ -481,15 +483,26 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'OrganizerDashboard',
   components: { Navbar, Footer },
   data() {
-    return { events: [ {id:3, title:'Web Dev Workshop', date:'2025-08-25', location:'Lab 3'} ] }
+    return { events: [] }
+  },
+  async created() {
+    try {
+      const apiEvents = await this.$store.dispatch('fetchMyEvents')
+      this.events = apiEvents.map(apiEventToView)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to load events')
+    }
   }
 }
 </script>
+
 ----------------------------------------------------------------
 
 /pages/Organizer/EditEvent.vue
@@ -523,6 +536,7 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView, formToEventPayload } from '@/utils/apiMappers'
 
 export default {
   name: 'EditEvent',
@@ -530,28 +544,36 @@ export default {
   data() {
     return { form: { title:'', date:'', time:'', location:'', category:'Workshop', description:'' } }
   },
-  created() {
-    // TODO: fetch /api/events/:id to prefill
-    // demo:
-    this.form = { title:'Web Dev Workshop', date:'2025-08-25', time:'10:00', location:'Lab 3', category:'Workshop', description:'Existing description' }
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    const view = apiEventToView(apiEvent)
+    this.form = {
+      title: view.title,
+      date: view.date,
+      time: view.time,
+      location: view.location || '',
+      category: view.category || 'Workshop',
+      description: view.description || ''
+    }
   },
   methods: {
     async save() {
       try {
-        // PUT /api/events/:id
-        await this.$http.put(`/api/events/${this.$route.params.id}`, this.form)
-        alert('Saved (demo)')
+        const payload = formToEventPayload(this.form)
+        await this.$store.dispatch('updateEvent', { id: this.$route.params.id, payload })
+        alert('Saved')
         this.$router.push('/organizer/dashboard')
-      } catch (err) { console.error(err); alert('Save failed (demo)') }
+      } catch (err) { console.error(err); alert('Save failed') }
     }
   }
 }
 </script>
+
 -------------------------------------------------------------------
 
 /pages/Organizer/EventDetails.vue
 ----------------------------------------------------------------        
-        <template>
+<template>
   <div>
     <Navbar />
     <main class="max-w-4xl mx-auto p-6">
@@ -577,18 +599,34 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'OrganizerEventDetails',
   components: { Navbar, Footer },
   data() {
-    return {
-      event: { id:this.$route.params.id, title:'Web Dev Workshop', date:'2025-08-25', location:'Lab 3' },
-      attendees: [ { name:'Rashed', email:'rashed@example.com', checked_in:false } ]
+    return { event: null, attendees: [] }
+  },
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    this.event = apiEventToView(apiEvent)
+    // assumes backend loads registrations with user relationship
+    this.attendees = (apiEvent.registrations || []).map(r => ({
+      name: r.user?.name || '-',
+      email: r.user?.email || '-',
+      checked_in: !!r.checked_in_at,
+      id: r.id
+    }))
+  },
+  methods: {
+    async markCheckIn(reg) {
+      await this.$store.dispatch('checkIn', reg.id)
+      reg.checked_in = true
     }
   }
 }
 </script>
+
 ------------------------------------------------------------
 
 /pages/Public/PublicLacding.vue
@@ -654,7 +692,7 @@ export default {
 
 /pages/Public/PublicLogin.vue
 -----------------------------------------------------------------
-      <template>
+<template>
   <div>
     <Navbar :showSearch="false" />
     <div class="min-h-screen flex items-center justify-center">
@@ -686,22 +724,42 @@ export default {
   methods: {
     async login() {
       try {
-        const res = await this.$http.post('/api/login', { email: this.email, password: this.password })
-        // handle token & redirect by role
-        console.log('login', res.data)
+        // 1. Hit Laravel Sanctum login endpoint
+        await this.$http.post('/api/login', { 
+          email: this.email, 
+          password: this.password 
+        })
+
+        // 2. Get authenticated user data from backend
+        await this.$store.dispatch('fetchUser')
+
+        // 3. Redirect based on role
+        const role = this.$store.getters.userRole
+        if (role === 'admin') {
+          this.$router.push('/admin/dashboard')
+        } else if (role === 'organizer') {
+          this.$router.push('/organizer/dashboard')
+        } else if (role === 'student') {
+          this.$router.push('/student/dashboard')
+        } else {
+          // fallback if role not found
+          this.$router.push('/')
+        }
+
       } catch (err) {
-        console.error(err)
-        alert('Login failed (demo)')
+        console.error(err.response?.data || err.message)
+        // optionally show a toast / error message
       }
     }
   }
 }
 </script>
+
 -----------------------------------------------------------------
 
 /pages/Public/PublicRegister.vue
 ------------------------------------------------------------------
-        <template>
+<template>
   <div>
     <Navbar :showSearch="false" />
     <div class="min-h-screen flex items-center justify-center">
@@ -737,19 +795,25 @@ export default {
         const res = await this.$http.post('/api/register', { name:this.name, email:this.email, password:this.password, role:this.role })
         console.log(res.data)
         this.$router.push('/login')
+        // await this.$store.dispatch('fetchUser')
+        // const role = this.$store.getters.userRole
+        // this.$router.push(role === 'admin' ? '/admin/dashboard' 
+        //   : role === 'organizer' ? '/organizer/dashboard' 
+        //   : '/student/dashboard')
       } catch (err) {
         console.error(err)
-        alert('Register failed (demo)')
+        alert('Register failed')
       }
     }
   }
 }
 </script>
+
 -------------------------------------------------------------------
 
 /pages/Student/Dashboard.vue
 -------------------------------------------------------------------
-        <template>
+<template>
   <div>
     <Navbar @search="onSearch" />
     <main class="max-w-6xl mx-auto p-6">
@@ -770,36 +834,36 @@ export default {
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
 import EventCard from '@/components/EventCard.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'StudentDashboard',
   components: { Navbar, Footer, EventCard },
   data() {
-    return {
-      events: [
-        { id:1, title:'AI Ethics Seminar', date:'2025-09-10', time:'15:00', location:'Auditorium A', description:'Ethics in AI', category:'Seminar', status:'approved' },
-        { id:3, title:'Web Dev Workshop', date:'2025-08-25', time:'10:00', location:'Lab 3', description:'Hands on web dev', category:'Workshop', status:'pending' }
-      ],
-      q: ''
-    }
+    return { events: [], q: '' }
+  },
+  async created() {
+    const apiEvents = await this.$store.dispatch('fetchEvents')
+    this.events = apiEvents.map(apiEventToView)
+    console.log(this.events)
   },
   computed: {
     filtered() {
       if (!this.q) return this.events
       const q = this.q.toLowerCase()
-      return this.events.filter(e => (e.title+e.description+e.location).toLowerCase().includes(q))
+      return this.events.filter(e => (e.title + e.description + e.location).toLowerCase().includes(q))
     }
   },
-  methods: {
-    onSearch(q) { this.q = q }
-  }
+  methods: { onSearch(q) { this.q = q } }
 }
 </script>
+
+
 ---------------------------------------------------------------
 
 /pages/Student/EventDetails.vue
 --------------------------------------------------------------
-        <template>
+<template>
   <div>
     <Navbar />
     <main class="max-w-4xl mx-auto p-6">
@@ -821,37 +885,37 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'StudentEventDetails',
   components: { Navbar, Footer },
   data() {
-    return { event: { id:this.$route.params.id, title:'Loading...', date:'', time:'', location:'', description:'' } }
+     return { event: null }
   },
-  created() {
-    // TODO: fetch /api/events/:id
-    // demo payload:
-    this.event = { id:this.$route.params.id, title:'AI Ethics Seminar', date:'2025-09-10', time:'15:00', location:'Auditorium A', description:'Long description...' }
+  async created() {
+    const apiEvent = await this.$store.dispatch('fetchEvent', this.$route.params.id)
+    this.event = apiEventToView(apiEvent)
   },
   methods: {
     async register() {
       try {
-        // POST /api/events/:id/register
-        await this.$http.post(`/api/events/${this.event.id}/register`)
-        alert('Registered (demo)')
+        await this.$store.dispatch('registerForEvent', this.event.id)
+        alert('Registered! Check “My Events”.')
       } catch (err) {
-        console.error(err); alert('Register failed (demo)')
+        console.error(err); alert('Register failed')
       }
     },
-    addCalendar() { alert('Add to calendar (demo)') }
+    addCalendar() { /* optional */ }
   }
 }
 </script>
+
 ------------------------------------------------------------------
 
 /pages/Student/MyEvents.vue
 -------------------------------------------------------------------    
-        <template>
+<template>
   <div>
     <Navbar />
     <main class="max-w-6xl mx-auto p-6">
@@ -874,22 +938,33 @@ export default {
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'MyEvents',
   components: { Navbar, Footer },
-  data() { return { myEvents: [ {id:1, title:'AI Ethics Seminar', date:'2025-09-10', location:'Auditorium A'} ] } },
+  data() { return { myEvents: [] } },
+  async created() {
+    const regs = await this.$store.dispatch('fetchMyRegistrations')
+    // assume API returns registrations with nested event
+    this.myEvents = regs.map(r => apiEventToView(r.event))
+  },
   methods: {
-    showQR(e) { alert(`QR for event ${e.id} (demo)`) }
+    showQR(reg) {
+      // If backend returns `qr_token` on registration, display/QR-encode it.
+      alert(`QR token: ${reg.qr_token || 'N/A'}`)
+    }
   }
 }
 </script>
+
 ----------------------------------------------------------------------
 
 /router/index.js
 ---------------------------------------------------------------------
-      import Vue from 'vue'
+import Vue from 'vue'
 import Router from 'vue-router'
+import store from '@/store'
 
 // Public
 import PublicLanding from '@/pages/Public/PublicLanding.vue'
@@ -919,7 +994,7 @@ import UtilityMaintenance from '@/pages/Utility/UtilityMaintenance.vue'
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   mode: 'history',
   routes: [
     { path: '/', component: PublicLanding },
@@ -927,72 +1002,324 @@ export default new Router({
     { path: '/register', component: PublicRegister },
 
     // Student
-    { path: '/student/dashboard', component: StudentDashboard },
-    { path: '/student/event/:id', component: StudentEventDetails, props: true },
-    { path: '/student/my-events', component: MyEvents },
+    { 
+      path: '/student/dashboard', 
+      component: StudentDashboard, 
+      meta: { requiresAuth: true, role: 'student' }
+    },
+    { 
+      path: '/student/event/:id', 
+      component: StudentEventDetails, 
+      props: true, 
+      meta: { requiresAuth: true, role: 'student' }
+    },
+    { 
+      path: '/student/my-events', 
+      component: MyEvents, 
+      meta: { requiresAuth: true, role: 'student' }
+    },
 
     // Organizer
-    { path: '/organizer/dashboard', component: OrganizerDashboard },
-    { path: '/organizer/create', component: CreateEvent },
-    { path: '/organizer/edit/:id', component: EditEvent, props: true },
-    { path: '/organizer/event/:id', component: OrganizerEventDetails, props: true },
+    { 
+      path: '/organizer/dashboard', 
+      component: OrganizerDashboard, 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
+    { 
+      path: '/organizer/create', 
+      component: CreateEvent, 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
+    { 
+      path: '/organizer/edit/:id', 
+      component: EditEvent, 
+      props: true, 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
+    { 
+      path: '/organizer/event/:id', 
+      component: OrganizerEventDetails, 
+      props: true, 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
 
     // Admin
-    { path: '/admin/dashboard', component: AdminDashboard },
-    { path: '/admin/events', component: AdminManageEvents },
-    { path: '/admin/users', component: ManageUsers },
-    { path: '/admin/reports', component: AdminReports },
-
+    { 
+      path: '/admin/dashboard', 
+      component: AdminDashboard, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    { 
+      path: '/admin/events', 
+      component: AdminManageEvents, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    { 
+      path: '/admin/users', 
+      component: ManageUsers, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    { 
+      path: '/admin/reports', 
+      component: AdminReports, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    
     { path: '/maintenance', component: UtilityMaintenance },
     { path: '*', component: NotFound }
   ]
 })
+
+// Navigation guard
+router.beforeEach(async (to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiredRole = to.meta.role
+
+  // If no user in store, try fetching from backend
+  if (!store.state.user) {
+    await store.dispatch('fetchUser').catch(() => {})
+  }
+
+  if (requiresAuth && !store.getters.isLoggedIn) {
+    return next('/login')
+  }
+
+  if (requiredRole && store.getters.userRole !== requiredRole) {
+    return next('/') // unauthorized → redirect home
+  }
+
+  next()
+})
+
+export default router
+
 ------------------------------------------------------------------------
 
-scr/http.js
+/store/index.js
+---------------------------------------------------------------------
+import Vue from 'vue'
+import Vuex from 'vuex'
+import http from '../http'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+  state: {
+    user: null,
+  },
+  mutations: {
+    setUser(state, user) {
+      state.user = user
+    },
+    clearUser(state) {
+      state.user = null
+    }
+  },
+  actions: {
+    async fetchUser({ commit }) {
+      try {
+        const res = await http.get('/api/user')
+        commit('setUser', res.data)
+      } catch (err) {
+        commit('clearUser')
+        throw err
+      }
+    },
+
+    async logout({ commit }) {
+      await http.post('/api/logout')
+      commit('clearUser')
+    },
+
+    // Events (read)
+    async fetchEvents() {
+      const res = await http.get('/api/events')
+      return res.data
+    },
+    async fetchEvent(_, eventId) {
+      const res = await http.get(`/api/events/${eventId}`)
+      return res.data
+    },
+
+    // Events (write) — organizer/admin only
+    async fetchMyEvents() {
+      const res = await http.get('/api/my-events')
+      return res.data
+    },
+    async createEvent(_, payload) {
+      const res = await http.post('/api/events', payload)
+      return res.data
+    },
+    async updateEvent(_, { id, payload }) {
+      const res = await http.put(`/api/events/${id}`, payload)
+      return res.data
+    },
+    async deleteEvent(_, id) {
+      await http.delete(`/api/events/${id}`)
+    },
+
+    // Registrations
+    async registerForEvent(_, eventId) {
+      const res = await http.post(`/api/events/${eventId}/register`)
+      return res.data
+    },
+    async fetchMyRegistrations() {
+      const res = await http.get('/api/my-registrations')
+      return res.data
+    },
+
+    // Attendance (organizer/admin)
+    async checkIn(_, registrationId) {
+      const res = await http.post(`/api/registrations/${registrationId}/checkin`)
+      return res.data
+    },
+
+    // Feedback
+    async submitFeedback(_, { eventId, rating, comment }) {
+      const res = await http.post(`/api/events/${eventId}/feedback`, { rating, comment })
+      return res.data
+    },
+    async fetchFeedbacks(_, eventId) {
+      const res = await http.get(`/api/events/${eventId}/feedbacks`)
+      return res.data
+    },
+
+    // Notifications
+    async fetchNotifications() {
+      const res = await http.get('/api/notifications')
+      return res.data
+    },
+    async markNotificationRead(_, notificationId) {
+      const res = await http.post(`/api/notifications/${notificationId}/read`)
+      return res.data
+    }
+},
+  getters: {
+    isLoggedIn: state => !!state.user,
+    userRole: state => state.user?.role || null
+  }
+})
+
+---------------------------------------------------------------------------
+
+utils/apiMappers.js
+---------------------------------------------------------------------------
+// Combines {date:'YYYY-MM-DD', time:'HH:mm'} into ISO strings
+export function formToEventPayload(form) {
+  const start_at = `${form.date} ${form.time}:00`
+
+  // If no separate end date/time, add 2 hours to local start time
+  let end_at
+  if (form.end_date && form.end_time) {
+    end_at = `${form.end_date} ${form.end_time}:00`
+  } else {
+    const startDateObj = new Date(`${form.date}T${form.time}`)
+    startDateObj.setHours(startDateObj.getHours() + 2)
+
+    // Convert back to local date/time string
+    const yyyy = startDateObj.getFullYear()
+    const mm = String(startDateObj.getMonth() + 1).padStart(2, '0')
+    const dd = String(startDateObj.getDate()).padStart(2, '0')
+    const hh = String(startDateObj.getHours()).padStart(2, '0')
+    const min = String(startDateObj.getMinutes()).padStart(2, '0')
+
+    end_at = `${yyyy}-${mm}-${dd} ${hh}:${min}:00`
+  }
+
+  return {
+    title: form.title,
+    description: form.description || null,
+    start_at,
+    end_at,
+    location: form.location || null,
+    category: form.category || null,
+    status: 'pending',
+    capacity: form.capacity ? Number(form.capacity) : null,
+    featured: !!form.featured
+  }
+}
+
+// For displaying an event read from API
+export function apiEventToView(e) {
+  const start = new Date(e.start_at)
+  return {
+    ...e,
+    date: start.toISOString().slice(0, 10),
+    time: start.toTimeString().slice(0, 5)
+  }
+}
+
+-------------------------------------------------------------------------------
+
+src/http.js
 -----------------------------------------------------------------
 import axios from 'axios'
 
-// Point this to your backend URL
+// .env in Vue: VUE_APP_API_BASE=http://localhost:8000 (or leave default below)
 const API_BASE = process.env.VUE_APP_API_BASE || 'http://localhost:8000'
 
+// Create Axios instance
 const http = axios.create({
-  baseURL: API_BASE + '/api',
-  withCredentials: true, // send/receive cookies for Sanctum
+  baseURL: process.env.VUE_APP_API_BASE,
+  withCredentials: true // send cookies
 })
 
-// Ensure CSRF cookie exists before any stateful request (login/register/logout)
 let csrfReady = false
+
 async function ensureCsrf() {
   if (csrfReady) return
   await axios.get(API_BASE + '/sanctum/csrf-cookie', { withCredentials: true })
   csrfReady = true
 }
 
-// Request interceptor: make sure CSRF is set when needed
+// Interceptor: ensure CSRF cookie exists AND set header
 http.interceptors.request.use(async (config) => {
-  // Only for mutating or auth endpoints that require session cookie
-  const needsCsrf = ['post','put','patch','delete'].includes((config.method || '').toLowerCase())
-  if (needsCsrf || config.url === '/login' || config.url === '/register' || config.url === '/logout') {
+  const method = (config.method || '').toLowerCase()
+  const needsCsrf = ['post', 'put', 'patch', 'delete'].includes(method)
+  const authPaths = ['/api/login', '/api/register', '/api/logout']
+
+  if (needsCsrf || authPaths.includes(config.url)) {
     await ensureCsrf()
+
+    // Get CSRF token from cookie and attach to header
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+    if (match) {
+      const token = decodeURIComponent(match[1])
+      config.headers['X-XSRF-TOKEN'] = token
+    }
   }
+
   return config
 })
 
-// Response interceptor: if 401, maybe redirect to login (optional)
-http.interceptors.response.use(
-  (r) => r,
-  (err) => {
-    if (err.response && err.response.status === 401) {
-      // e.g., route to /login or clear user state
-      console.warn('Unauthorized')
-    }
-    return Promise.reject(err)
-  }
-)
-
 export default http
+
 -----------------------------------------------------------------------
 
+src/main.js
+----------------------------------------------------------------------
+import Vue from 'vue'
+import App from './App.vue'
+import router from './router'
+import axios from 'axios'
+import './assets/tailwind.css'
+import http from './http'
+import store from './store'
+
+Vue.config.productionTip = false
+Vue.prototype.$http = http
+
+// axios defaults
+axios.defaults.baseURL = 'http://localhost:8000'   // your Laravel backend URL
+axios.defaults.withCredentials = true             // needed for sanctum cookies
+axios.prototype.$http = http
+
+new Vue({
+  router,
+  store,
+  render: h => h(App)
+}).$mount('#app')
+
+--------------------------------------------------------------------------------
 
 use these only tailwindcss@^3 + vue 2 + laravel 10 + mysql

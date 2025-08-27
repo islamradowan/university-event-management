@@ -25,12 +25,22 @@
 <script>
 import Navbar from '@/components/AppNavbar.vue'
 import Footer from '@/components/AppFooter.vue'
+import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'OrganizerDashboard',
   components: { Navbar, Footer },
   data() {
-    return { events: [ {id:3, title:'Web Dev Workshop', date:'2025-08-25', location:'Lab 3'} ] }
+    return { events: [] }
+  },
+  async created() {
+    try {
+      const apiEvents = await this.$store.dispatch('fetchMyEvents')
+      this.events = apiEvents.map(apiEventToView)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to load events')
+    }
   }
 }
 </script>

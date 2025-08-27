@@ -34,9 +34,14 @@ export default {
         const res = await this.$http.post('/api/register', { name:this.name, email:this.email, password:this.password, role:this.role })
         console.log(res.data)
         this.$router.push('/login')
+        // await this.$store.dispatch('fetchUser')
+        // const role = this.$store.getters.userRole
+        // this.$router.push(role === 'admin' ? '/admin/dashboard' 
+        //   : role === 'organizer' ? '/organizer/dashboard' 
+        //   : '/student/dashboard')
       } catch (err) {
         console.error(err)
-        alert('Register failed (demo)')
+        alert('Register failed')
       }
     }
   }

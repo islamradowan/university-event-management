@@ -12,16 +12,25 @@
       </div>
       
       <div class="bg-white p-4 rounded shadow">
-        <div v-for="e in pending" :key="e.id" class="flex justify-between items-center py-3 border-b last:border-b-0">
-          <div>
-            <h3 class="font-semibold">{{ e.title }}</h3>
-            <p class="text-sm text-slate-600">Submitted by: {{ e.organizer }}</p>
-          </div>
-          <div class="space-x-2">
-            <button @click="approve(e.id)" class="px-3 py-1 border rounded">Approve</button>
-            <button @click="reject(e.id)" class="px-3 py-1 border rounded">Reject</button>
+        <div v-if="loading" class="py-6 text-center text-slate-500">Loading…</div>
+        <div v-else-if="!pending.length" class="py-6 text-center text-slate-500">No pending events 🎉</div>
+        <div v-else>
+          <div v-for="e in pending" :key="e.id" class="flex justify-between items-center py-3 border-b last:border-b-0">
+            <div>
+              <h3 class="font-semibold">{{ e.title }}</h3>
+              <p class="text-sm text-slate-600">
+                Submitted by: {{ e.organizer?.name || '-' }}
+                · {{ new Date(e.start_at).toLocaleString() }}
+                · {{ e.location || '—' }}
+            </p>
+            </div>
+            <div class="space-x-2">
+              <button @click="approve(e)" class="px-3 py-1 border rounded">Approve</button>
+              <button @click="reject(e)" class="px-3 py-1 border rounded">Reject</button>
+            </div>
           </div>
         </div>
+        
       </div>
     </main>
     <Footer />
@@ -36,24 +45,35 @@ export default {
   name: 'AdminManageEvents',
   components: { Navbar, Footer },
   data() {
-    return { 
-      pending: [ 
-        {id: 1, title: 'New Workshop Proposal', organizer: 'Rashed'},
-        {id: 2, title: 'Tech Conference', organizer: 'Alex'}
-      ] 
-    }
+    return { pending: [], loading: true }
+  },
+  async created() {
+    await this.load()
   },
   methods: {
-    async approve(id) {
-      // PUT /api/events/:id/status {status:'approved'}
-      alert(`Approved event ID: ${id}`)
-      // In a real app, you would make an API call here
-      // await this.$http.put(`/api/events/${id}/status`, { status: 'approved' })
-      // Then remove from pending list or refresh data
+    async load() {
+      try {
+        this.loading = true
+        this.pending = await this.$store.dispatch('fetchPendingEvents')
+      } finally {
+        this.loading = false
+      }
     },
-    async reject(id) {
-      alert(`Rejected event ID: ${id}`)
-      // await this.$http.put(`/api/events/${id}/status`, { status: 'rejected' })
+    async approve(e) {
+      try {
+        await this.$store.dispatch('approveEvent', e.id)
+        this.pending = this.pending.filter(x => x.id !== e.id)
+      } catch (err) {
+        console.error(err); alert('Approval failed')
+      }
+    },
+    async reject(e) {
+      try {
+        await this.$store.dispatch('rejectEvent', e.id)
+        this.pending = this.pending.filter(x => x.id !== e.id)
+      } catch (err) {
+        console.error(err); alert('Rejection failed')
+      }
     }
   }
 }
