@@ -12,7 +12,7 @@ Vue.prototype.$http = http
 // axios defaults
 axios.defaults.baseURL = 'http://localhost:8000'   // your Laravel backend URL
 axios.defaults.withCredentials = true             // needed for sanctum cookies
-axios.prototype.$http = http
+// Remove duplicate - already set above with Vue.prototype.$http = http
 
 new Vue({
   router,

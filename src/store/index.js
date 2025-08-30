@@ -7,6 +7,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     user: null,
+    eventsCache: null,
+    cacheTimestamp: null
   },
   mutations: {
     setUser(state, user) {
@@ -14,6 +16,10 @@ export default new Vuex.Store({
     },
     clearUser(state) {
       state.user = null
+    },
+    setEventsCache(state, { events, timestamp }) {
+      state.eventsCache = events
+      state.cacheTimestamp = timestamp
     }
   },
   actions: {
@@ -51,9 +57,17 @@ export default new Vuex.Store({
       return res.data
     },
 
-    // Events (read)
-    async fetchEvents() {
-      const res = await http.get('/api/events')
+    // Events (read) with caching
+    async fetchEvents({ state, commit }) {
+      const now = Date.now()
+      const cacheAge = 5 * 60 * 1000 // 5 minutes
+      
+      if (state.eventsCache && state.cacheTimestamp && (now - state.cacheTimestamp) < cacheAge) {
+        return state.eventsCache
+      }
+      
+      const res = await http.get('/api/events?limit=20')
+      commit('setEventsCache', { events: res.data, timestamp: now })
       return res.data
     },
     async fetchEvent(_, eventId) {

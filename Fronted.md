@@ -1,47 +1,82 @@
-These ar my frontend files (vue.js 2)
+These are my frontend files (Vue.js 2)
 
-**my vue scaffold **
+**Vue Project Structure**
 -------------------------------------------------------
 /public/
     index.html
+    favicon.ico
 
 /src/
     /assets/
         tailwind.css
+        logo.png
     /components/
+        AdvancedSearch.vue          # Multi-criteria search with filters
         AppFooter.vue
-        AppNavbar.vue
+        AppNavbar.vue               # Dynamic role-based navigation
+        AvatarUpload.vue
+        Breadcrumb.vue              # Hierarchical navigation
+        EventCalendar.vue           # FullCalendar integration
         EventCard.vue
+        FileUpload.vue
+        LiveAttendanceTracker.vue   # Real-time attendance tracking
+        LiveEventUpdates.vue        # Real-time event updates
         Modal.vue
+        Pagination.vue              # Reusable pagination component
+        QRCodeDisplay.vue
+        QRScanner.vue
+        RealTimeNotifications.vue   # Real-time notifications
         SearchBar.vue
     /pages/
         /Admin/
             AdminManageEvents.vue
             AdminReports.vue
+            Calendar.vue            # Admin calendar view
             Dashboard.vue
             ManageUser.vue
+            SendAnnouncement.vue
         /Organizer/
+            Calendar.vue            # Organizer calendar view
             CreateEvent.vue
             Dashboard.vue
             EditEvent.vue
-            EventDetails.vue
+            EventDetails.vue        # With live attendance tracking
         /Public/
-            PublicLacding.vue
+            PublicLanding.vue
             PublicLogin.vue
             PublicRegister.vue
         /Student/
-            Dashboard.vue
+            Calendar.vue            # Student calendar view
+            Dashboard.vue           # With real-time features
             EventDetails.vue
             MyEvents.vue
+            SearchEvents.vue        # Advanced search page
+        /Profile/
+            UserProfile.vue
         /Utility/
-            Notfound.vue
-            UtilityMaintanance.vue
+            NotFound.vue
+            UtilityMaintenance.vue
+    /plugins/
+        pusher.js                   # Pusher configuration
     /router/
-        index.js
+        index.js                    # Route guards & role-based routing
+    /store/
+        index.js                    # Vuex store with API actions
+    /utils/
+        apiMappers.js
     App.vue
     main.js
+    http.js                         # Axios configuration with CSRF
+    api.js
+
+Root files:
+    .env                            # Environment variables
+    package.json                    # Dependencies with pusher-js
     tailwind.config.js
     postcss.config.js
+    vue.config.js
+    babel.config.js
+    .eslintrc.js
 --------------------------------------------------------------
 
 ** files **
@@ -1207,6 +1242,38 @@ utils/apiMappers.js
 // Combines {date:'YYYY-MM-DD', time:'HH:mm'} into ISO strings
 export function formToEventPayload(form) {
   const start_at = `${form.date} ${form.time}:00`
+  const end_at = form.endDate && form.endTime ? `${form.endDate} ${form.endTime}:00` : null
+  
+  return {
+    title: form.title,
+    description: form.description,
+    start_at,
+    end_at,
+    location: form.location,
+    category: form.category,
+    capacity: form.capacity,
+    featured: form.featured || false
+  }
+}
+
+// Converts API event to view format
+export function apiEventToView(apiEvent) {
+  return {
+    id: apiEvent.id,
+    title: apiEvent.title,
+    description: apiEvent.description,
+    date: apiEvent.start_at?.split(' ')[0] || '',
+    time: apiEvent.start_at?.split(' ')[1]?.slice(0, 5) || '',
+    start_at: apiEvent.start_at,
+    end_at: apiEvent.end_at,
+    location: apiEvent.location,
+    category: apiEvent.category,
+    status: apiEvent.status,
+    capacity: apiEvent.capacity,
+    featured: apiEvent.featured,
+    organizer: apiEvent.organizer?.name || 'Unknown'
+  }
+}
 
   // If no separate end date/time, add 2 hours to local start time
   let end_at

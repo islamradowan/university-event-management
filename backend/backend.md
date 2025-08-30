@@ -1,3 +1,404 @@
+# **COMPLETE BACKEND ANALYSIS**
+
+## 📁 **Current Structure**
+
+### **Controllers (11 Total)**
+- ✅ **AdminController.php** - User management, statistics
+- ✅ **AdminReportsController.php** - CSV exports, analytics
+- ✅ **AuthController.php** - Login/register/logout with Sanctum
+- ✅ **EmailController.php** - Gmail SMTP announcements
+- ✅ **EventController.php** - CRUD + real-time broadcasting
+- ✅ **EventRegistrationController.php** - Registration + real-time check-ins
+- ✅ **FeedbackController.php** - Event ratings & comments
+- ✅ **FileUploadController.php** - Avatars, posters, gallery uploads
+- ✅ **NotificationController.php** - In-app notifications + broadcasting
+- ✅ **QRCodeController.php** - QR generation & scanning
+- ✅ **UserController.php** - Profile management
+
+### **Broadcasting Events (3 Total)**
+- ✅ **EventUpdated.php** - Real-time event changes
+- ✅ **NewNotification.php** - Live notifications
+- ✅ **AttendanceUpdated.php** - Live check-in updates
+
+### **Mail Classes (3 Total)**
+- ✅ **AdminAnnouncement.php** - Professional email template
+- ✅ **EventRegistrationConfirmation.php** - Auto-confirmation emails
+- ✅ **EventReminder.php** - Scheduled reminder emails
+
+### **Models (6 Total)**
+- ✅ **User.php** - Roles, relationships, authentication
+- ✅ **Event.php** - Full event model with media, registrations
+- ✅ **EventRegistration.php** - QR tokens, check-in timestamps
+- ✅ **EventMedia.php** - File uploads, gallery management
+- ✅ **Feedback.php** - Ratings & comments system
+- ✅ **Notification.php** - In-app notification system
+
+### **Database (9 Migrations)**
+- ✅ **users** - Roles, avatars, authentication
+- ✅ **events** - Full event data, approval workflow
+- ✅ **event_registrations** - QR tokens, attendance tracking
+- ✅ **event_media** - File uploads, gallery system
+- ✅ **feedbacks** - Rating & comment system
+- ✅ **notifications** - In-app notification system
+- ✅ **password_reset_tokens** - Password recovery
+- ✅ **failed_jobs** - Queue management
+- ✅ **personal_access_tokens** - Sanctum tokens
+
+### **Configuration Files**
+- ✅ **broadcasting.php** - Pusher WebSocket setup
+- ✅ **cors.php** - Enhanced CORS with broadcasting auth
+- ✅ **sanctum.php** - SPA authentication configuration
+- ✅ **channels.php** - Broadcasting channels with authorization
+- ✅ **mail.php** - Gmail SMTP configuration
+
+### **Middleware & Commands**
+- ✅ **RoleMiddleware.php** - Role-based access control
+- ✅ **SendEventReminders.php** - Automated email scheduler
+
+## 🔧 **Environment Configuration**
+```env
+# Real-time Features
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=2043057
+PUSHER_APP_KEY=a68bdc09fdd21617929d
+PUSHER_APP_SECRET=48cdefafbf63648e6efd
+PUSHER_APP_CLUSTER=mt1
+
+# Email System
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+
+# Database
+DB_CONNECTION=mysql
+DB_DATABASE=uinevents
+
+# CORS & Authentication
+CLIENT_URL=http://localhost:8080
+SANCTUM_STATEFUL_DOMAINS=localhost:8080,127.0.0.1:8080
+```
+
+## 📦 **Dependencies**
+- ✅ **pusher/pusher-php-server**: ^7.2 - Real-time broadcasting
+- ✅ **simplesoftwareio/simple-qrcode**: ^4.2 - QR code system
+- ✅ **laravel/sanctum**: ^3.2 - SPA authentication
+- ✅ **laravel/framework**: ^10.10 - Core framework
+
+## 🚀 **API Endpoints (25+ Routes)**
+
+### **Authentication**
+- POST `/api/register` - User registration
+- POST `/api/login` - User login
+- POST `/api/logout` - User logout
+- POST `/api/broadcasting/auth` - Broadcasting authentication
+
+### **Events**
+- GET `/api/events` - List all events
+- GET `/api/events/{event}` - Event details
+- POST `/api/events` - Create event (organizer/admin)
+- PUT `/api/events/{event}` - Update event + broadcasting
+- DELETE `/api/events/{event}` - Delete event
+- GET `/api/my-events` - Organizer's events
+
+### **Registrations & Attendance**
+- POST `/api/events/{event}/register` - Register for event
+- GET `/api/my-registrations` - User's registrations
+- POST `/api/registrations/{registration}/checkin` - Check-in + broadcasting
+
+### **File Uploads**
+- POST `/api/upload/avatar` - Upload user avatar
+- POST `/api/events/{event}/upload/poster` - Upload event poster
+- POST `/api/events/{event}/upload/gallery` - Upload gallery images
+- DELETE `/api/media/{media}` - Delete media files
+
+### **QR Code System**
+- GET `/api/events/{event}/qr-code` - Get registration QR
+- POST `/api/qr/scan` - Scan QR code for check-in
+- GET `/api/registrations/{registration}/qr` - Generate QR code
+
+### **Notifications**
+- GET `/api/notifications` - User notifications
+- POST `/api/notifications/{notification}/read` - Mark as read
+- POST `/api/notifications/send` - Send notification + broadcasting
+
+### **Admin Management**
+- GET `/api/admin/users` - User management
+- PUT `/api/admin/users/{user}` - Update user
+- DELETE `/api/admin/users/{user}` - Delete user
+- GET `/api/admin/stats` - Dashboard statistics
+- POST `/api/admin/send-announcement` - Email announcements
+- GET `/api/admin/export-registrations` - CSV export
+
+### **Feedback System**
+- POST `/api/events/{event}/feedback` - Submit feedback
+- GET `/api/events/{event}/feedbacks` - List feedbacks
+
+## ✅ **Real-time Broadcasting**
+- **EventUpdated** - Broadcasts to `events` channel
+- **NewNotification** - Broadcasts to `user.{id}` channel
+- **AttendanceUpdated** - Broadcasts to `event.{id}` channel
+- **Channel Authorization** - Role-based access control
+
+## 📧 **Email System**
+- **Gmail SMTP Integration** - Production-ready emails
+- **Registration Confirmations** - Automatic on signup
+- **Event Reminders** - Scheduled command
+- **Admin Announcements** - Role-based targeting
+- **Professional Templates** - HTML email designs
+
+## 🔐 **Security Features**
+- **Laravel Sanctum** - SPA authentication
+- **Role-based Middleware** - Admin/Organizer/Student access
+- **CSRF Protection** - Cross-site request forgery prevention
+- **CORS Configuration** - Cross-origin resource sharing
+- **File Upload Validation** - Size & type restrictions
+
+**UPDATED BACKEND STRUCTURE**
+
+**NEW FEATURES ADDED:**
+✅ Real-time notifications (WebSocket/Pusher)
+✅ Live event updates
+✅ Real-time attendance tracking
+✅ Broadcasting channels and events
+✅ Enhanced email system with Gmail SMTP
+✅ File upload capabilities
+✅ QR code generation and scanning
+✅ Admin management features
+
+**BROADCASTING EVENTS:**
+- app/Events/EventUpdated.php - Real-time event updates
+- app/Events/NewNotification.php - Real-time notifications
+- app/Events/AttendanceUpdated.php - Real-time attendance tracking
+
+**NEW CONTROLLERS:**
+- FileUploadController.php - Handle file uploads
+- QRCodeController.php - QR code generation and scanning
+- EmailController.php - Email announcements
+- AdminController.php - Admin management
+- UserController.php - User profile management
+
+**ENHANCED CONFIGURATIONS:**
+- config/broadcasting.php - Pusher configuration
+- routes/channels.php - Broadcasting channels with authorization
+- Enhanced CORS for broadcasting auth
+
+**ENVIRONMENT UPDATES:**
+```env
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=2043057
+PUSHER_APP_KEY=a68bdc09fdd21617929d
+PUSHER_APP_SECRET=48cdefafbf63648e6efd
+PUSHER_APP_CLUSTER=mt1
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+```
+
+**DEPENDENCIES ADDED:**
+- pusher/pusher-php-server: ^7.2
+- simplesoftwareio/simple-qrcode: ^4.2
+
+**UPDATED BACKEND STRUCTURE**
+
+**BACKEND STRUCTURE:**
+✅ Real-time notifications (WebSocket/Pusher)
+✅ Live event updates
+✅ Real-time attendance tracking
+✅ Broadcasting channels and events
+✅ Enhanced email system with Gmail SMTP
+✅ File upload capabilities
+✅ QR code generation and scanning
+✅ Admin management features
+
+**BROADCASTING EVENTS:**
+- app/Events/EventUpdated.php - Real-time event updates
+- app/Events/NewNotification.php - Real-time notifications
+- app/Events/AttendanceUpdated.php - Real-time attendance tracking
+
+**NEW CONTROLLERS:**
+- FileUploadController.php - Handle file uploads
+- QRCodeController.php - QR code generation and scanning
+- EmailController.php - Email announcements
+- AdminController.php - Admin management
+- UserController.php - User profile management
+
+**ENHANCED CONFIGURATIONS:**
+- config/broadcasting.php - Pusher configuration
+- routes/channels.php - Broadcasting channels with authorization
+- Enhanced CORS for broadcasting auth
+
+**ENVIRONMENT UPDATES:**
+```env
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=2043057
+PUSHER_APP_KEY=a68bdc09fdd21617929d
+PUSHER_APP_SECRET=48cdefafbf63648e6efd
+PUSHER_APP_CLUSTER=mt1
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+```
+
+**DEPENDENCIES ADDED:**
+- pusher/pusher-php-server: ^7.2
+- simplesoftwareio/simple-qrcode: ^4.2
+
+**BROADCASTING EVENTS:**
+
+app/Events/EventUpdated.php
+<?php
+
+namespace App\Events;
+
+use App\Models\Event;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class EventUpdated implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public $event;
+
+    public function __construct(Event $event)
+    {
+        $this->event = $event->load('organizer');
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('events');
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'id' => $this->event->id,
+            'title' => $this->event->title,
+            'status' => $this->event->status,
+            'start_at' => $this->event->start_at,
+            'organizer' => $this->event->organizer->name ?? 'Unknown'
+        ];
+    }
+}
+
+app/Events/NewNotification.php
+<?php
+
+namespace App\Events;
+
+use App\Models\Notification;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class NewNotification implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public $notification;
+
+    public function __construct(Notification $notification)
+    {
+        $this->notification = $notification;
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('user.' . $this->notification->user_id);
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'id' => $this->notification->id,
+            'title' => $this->notification->title,
+            'message' => $this->notification->message,
+            'created_at' => $this->notification->created_at
+        ];
+    }
+}
+
+app/Events/AttendanceUpdated.php
+<?php
+
+namespace App\Events;
+
+use App\Models\EventRegistration;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class AttendanceUpdated implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public $registration;
+
+    public function __construct(EventRegistration $registration)
+    {
+        $this->registration = $registration->load(['user', 'event']);
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('event.' . $this->registration->event_id);
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'registration_id' => $this->registration->id,
+            'user_name' => $this->registration->user->name,
+            'checked_in_at' => $this->registration->checked_in_at,
+            'event_id' => $this->registration->event_id
+        ];
+    }
+}
+
+**BROADCASTING CHANNELS:**
+
+routes/channels.php
+<?php
+
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+
+// Public channels
+Broadcast::channel('events', function () {
+    return true;
+});
+
+// User-specific notifications
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
+
+// Event-specific channels for attendance
+Broadcast::channel('event.{eventId}', function ($user, $eventId) {
+    // Allow organizers and admins to listen to event channels
+    return in_array($user->role, ['organizer', 'admin']);
+});
+
 These are my Migration files
 ---------------------------------------------------------------------
 create_users_table.php
@@ -717,23 +1118,364 @@ class AuthController extends Controller
     }
 }
 
-app/Http/Controllers/API/EventController.php
+**ENHANCED CONTROLLERS:**
 
+app/Http/Controllers/API/FileUploadController.php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Event;
+use App\Models\EventMedia;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class FileUploadController extends Controller
+{
+    public function uploadEventPoster(Request $request, Event $event)
+    {
+        $request->validate([
+            'poster' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        if ($request->hasFile('poster')) {
+            // Delete old poster if exists
+            if ($event->poster_path) {
+                Storage::disk('public')->delete($event->poster_path);
+            }
+
+            $file = $request->file('poster');
+            $filename = 'event_poster_' . $event->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('events/posters', $filename, 'public');
+
+            $event->update(['poster_path' => $path]);
+
+            return response()->json([
+                'message' => 'Poster uploaded successfully',
+                'poster_url' => Storage::url($path)
+            ]);
+        }
+
+        return response()->json(['message' => 'No file uploaded'], 400);
+    }
+
+    public function uploadEventGallery(Request $request, Event $event)
+    {
+        $request->validate([
+            'images' => 'required|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        $uploadedFiles = [];
+
+        foreach ($request->file('images') as $file) {
+            $filename = 'event_gallery_' . $event->id . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('events/gallery', $filename, 'public');
+
+            $media = EventMedia::create([
+                'event_id' => $event->id,
+                'file_path' => $path,
+                'type' => 'gallery'
+            ]);
+
+            $uploadedFiles[] = [
+                'id' => $media->id,
+                'url' => Storage::url($path)
+            ];
+        }
+
+        return response()->json([
+            'message' => 'Gallery images uploaded successfully',
+            'files' => $uploadedFiles
+        ]);
+    }
+
+    public function uploadUserAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:1024'
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            $file = $request->file('avatar');
+            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('avatars', $filename, 'public');
+
+            $user->update(['avatar' => $path]);
+
+            return response()->json([
+                'message' => 'Avatar uploaded successfully',
+                'avatar_url' => Storage::url($path)
+            ]);
+        }
+
+        return response()->json(['message' => 'No file uploaded'], 400);
+    }
+
+    public function deleteEventMedia(EventMedia $media)
+    {
+        Storage::disk('public')->delete($media->file_path);
+        $media->delete();
+
+        return response()->json(['message' => 'Media deleted successfully']);
+    }
+}
+
+app/Http/Controllers/API/UserController.php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class UserController extends Controller
+{
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
+}
+
+app/Http/Controllers/API/QRCodeController.php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\EventRegistration;
+use Illuminate\Http\Request;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+class QRCodeController extends Controller
+{
+    public function generateQR(EventRegistration $registration)
+    {
+        $qrData = json_encode([
+            'registration_id' => $registration->id,
+            'user_id' => $registration->user_id,
+            'event_id' => $registration->event_id,
+            'token' => $registration->qr_token
+        ]);
+
+        $qrCode = QrCode::size(200)->generate($qrData);
+
+        return response()->json([
+            'qr_code' => base64_encode($qrCode),
+            'qr_token' => $registration->qr_token
+        ]);
+    }
+
+    public function scanQR(Request $request)
+    {
+        $request->validate([
+            'qr_token' => 'required|string'
+        ]);
+
+        $registration = EventRegistration::where('qr_token', $request->qr_token)->first();
+
+        if (!$registration) {
+            return response()->json(['message' => 'Invalid QR code'], 404);
+        }
+
+        if ($registration->checked_in_at) {
+            return response()->json([
+                'message' => 'Already checked in',
+                'checked_in_at' => $registration->checked_in_at
+            ], 400);
+        }
+
+        $registration->update(['checked_in_at' => now()]);
+
+        return response()->json([
+            'message' => 'Check-in successful',
+            'registration' => $registration->load(['user', 'event'])
+        ]);
+    }
+
+    public function getRegistrationQR(Request $request, $eventId)
+    {
+        $user = $request->user();
+        
+        $registration = EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $eventId)
+            ->first();
+
+        if (!$registration) {
+            return response()->json(['message' => 'Registration not found'], 404);
+        }
+
+        return $this->generateQR($registration);
+    }
+}
+
+app/Http/Controllers/API/EmailController.php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Mail\AdminAnnouncement;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+
+class EmailController extends Controller
+{
+    public function sendAnnouncement(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'recipients' => 'required|in:all,students,organizers'
+        ]);
+
+        $query = User::query();
+        
+        if ($request->recipients === 'students') {
+            $query->where('role', 'student');
+        } elseif ($request->recipients === 'organizers') {
+            $query->where('role', 'organizer');
+        }
+
+        $users = $query->get();
+        $sentCount = 0;
+
+        foreach ($users as $user) {
+            try {
+                Mail::to($user->email)->send(new AdminAnnouncement(
+                    $request->title,
+                    $request->message,
+                    $user->name
+                ));
+                $sentCount++;
+            } catch (\Exception $e) {
+                \Log::error('Failed to send email to ' . $user->email . ': ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => "Announcement sent to {$sentCount} users",
+            'sent_count' => $sentCount,
+            'total_users' => $users->count()
+        ]);
+    }
+}
+
+app/Console/Commands/SendEventReminders.php
+<?php
+
+namespace App\Console\Commands;
+
+use App\Mail\EventReminder;
+use App\Models\Event;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Mail;
+
+class SendEventReminders extends Command
+{
+    protected $signature = 'events:send-reminders';
+    protected $description = 'Send reminder emails for events happening tomorrow';
+
+    public function handle()
+    {
+        $tomorrow = now()->addDay()->startOfDay();
+        $endOfTomorrow = now()->addDay()->endOfDay();
+
+        $events = Event::where('status', 'approved')
+            ->whereBetween('start_at', [$tomorrow, $endOfTomorrow])
+            ->with(['registrations.user'])
+            ->get();
+
+        $sentCount = 0;
+
+        foreach ($events as $event) {
+            foreach ($event->registrations as $registration) {
+                if ($registration->user) {
+                    try {
+                        Mail::to($registration->user->email)->send(
+                            new EventReminder($registration->user, $event)
+                        );
+                        $sentCount++;
+                    } catch (\Exception $e) {
+                        $this->error('Failed to send reminder to ' . $registration->user->email);
+                    }
+                }
+            }
+        }
+
+        $this->info("Sent {$sentCount} reminder emails for " . $events->count() . " events");
+        return 0;
+    }
+}
+
+app/Mail/EventRegistrationConfirmation.php
+app/Mail/EventReminder.php
+app/Mail/AdminAnnouncement.php
+- Professional HTML email templates
+- Automatic registration confirmations
+- Event reminder system
+- Admin announcement functionality
+
+app/Http/Controllers/API/EventController.php
 <?php
 
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Events\EventUpdated;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::with(['organizer','media','registrations'])->get();
-        return response()->json($events);
-        // return Event::all();
+        $user = $request->user();
+
+        if ($request->query('status') === 'pending') {
+            if (!$user || $user->role !== 'admin') {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+            return Event::with(['organizer','registrations'])
+                ->where('status', 'pending')
+                ->orderByDesc('start_at')
+                ->get();
+        }
+
+        return Event::with(['organizer','media'])
+            ->where('status', 'approved')
+            ->orderBy('start_at')
+            ->get();
+    }
+    
+    public function publicIndex()
+    {
+        return Event::with('organizer')
+            ->where('status', 'approved')
+            ->orderBy('start_at')
+            ->get();
     }
 
     public function show(Event $event)
@@ -743,13 +1485,13 @@ class EventController extends Controller
     }
 
     public function myEvents(Request $request)
-{
-    $user = $request->user();
-    return Event::with('registrations', 'feedbacks')
-                ->where('organizer_id', $user->id)
-                ->orderByDesc('start_at')
-                ->get();
-}
+    {
+        $user = $request->user();
+        return Event::with('registrations', 'feedbacks')
+                    ->where('organizer_id', $user->id)
+                    ->orderByDesc('start_at')
+                    ->get();
+    }
 
     public function store(Request $request)
     {
@@ -771,7 +1513,6 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        // $this->authorize('update',$event); // optional: use policy
         $data = $request->validate([
             'title'=>'sometimes|required|string|max:255',
             'description'=>'nullable|string',
@@ -785,14 +1526,29 @@ class EventController extends Controller
         ]);
 
         $event->update($data);
+        
+        // Broadcast event update
+        broadcast(new EventUpdated($event));
+        
         return response()->json($event);
     }
 
     public function destroy(Event $event)
     {
-        $this->authorize('delete',$event); // optional
         $event->delete();
         return response()->json(['message'=>'Deleted']);
+    }
+
+    public function approveEvent(Event $event)
+    {
+        $event->update(['status' => 'approved']);
+        return response()->json($event);
+    }
+
+    public function rejectEvent(Event $event)
+    {
+        $event->update(['status' => 'rejected']);
+        return response()->json($event);
     }
 }
 
@@ -805,7 +1561,10 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Mail\EventRegistrationConfirmation;
+use App\Events\AttendanceUpdated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class EventRegistrationController extends Controller
@@ -824,6 +1583,13 @@ class EventRegistrationController extends Controller
             'qr_token'=>Str::uuid()
         ]);
 
+        // Send confirmation email
+        try {
+            Mail::to($user->email)->send(new EventRegistrationConfirmation($user, $event));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send registration confirmation email: ' . $e->getMessage());
+        }
+
         return response()->json($reg,201);
     }
 
@@ -831,6 +1597,9 @@ class EventRegistrationController extends Controller
     {
         $registration->checked_in_at = now();
         $registration->save();
+
+        // Broadcast attendance update
+        broadcast(new AttendanceUpdated($registration));
 
         return response()->json($registration);
     }
@@ -882,14 +1651,16 @@ app/Http/Controllers/API/NotificationController.php
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Notification;
+use App\Events\NewNotification;
 
 class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $notifs = $request->user()->notifications()->get();
+        $notifs = $request->user()->notifications()->orderBy('created_at', 'desc')->get();
         return response()->json($notifs);
     }
 
@@ -900,11 +1671,46 @@ class NotificationController extends Controller
 
         return response()->json($notification);
     }
+    
+    public function sendNotificationToAll(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string',
+            'message' => 'required|string',
+            'recipients' => 'sometimes|in:all,students,organizers'
+        ]);
+
+        $query = User::query();
+        $recipients = $data['recipients'] ?? 'all';
+        
+        if ($recipients === 'students') {
+            $query->where('role', 'student');
+        } elseif ($recipients === 'organizers') {
+            $query->where('role', 'organizer');
+        }
+
+        $users = $query->get();
+        foreach ($users as $user) {
+            $notification = Notification::create([
+                'user_id' => $user->id,
+                'title' => $data['title'],
+                'message' => $data['message'],
+            ]);
+            
+            // Broadcast notification
+            broadcast(new NewNotification($notification));
+        }
+
+        return response()->json([
+            'message' => "In-app notifications sent to {$users->count()} users",
+            'sent_count' => $users->count()
+        ]);
+    }
 }
 -----------------------------------------------------------------------
 
-This is my rourtes file 
------------------------------------------------------------------------
+**UPDATED API ROUTES:**
+
 routes/api.php
 <?php
 
@@ -912,72 +1718,91 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\EventController;
-use App\Http\Controllers\API\EventRegistrationController;
 use App\Http\Controllers\API\FeedbackController;
+use App\Http\Controllers\API\AdminReportsController;
 use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\EventRegistrationController;
+use App\Http\Controllers\API\FileUploadController;
+use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\QRCodeController;
+use App\Http\Controllers\API\EmailController;
+use App\Http\Controllers\API\AdminController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
-// //login, register and logout
-// Route::post('/register', [AuthController::class,'register']);
-// Route::post('/login', [AuthController::class,'login']);
-// Route::post('/logout', [AuthController::class,'logout'])->middleware('auth:sanctum');
-
-
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
+Route::get('/public/events', [EventController::class, 'publicIndex']);
 
 // Public auth
 Route::post('/register', [AuthController::class,'register']);
 Route::post('/login', [AuthController::class,'login']);
 Route::post('/logout', [AuthController::class,'logout'])->middleware('auth:sanctum');
 
+// Broadcasting auth
+Route::post('/broadcasting/auth', function() {
+    return auth()->user();
+})->middleware('auth:sanctum');
 
 // Read: all events for authenticated users
 Route::middleware(['auth:sanctum', 'role:organizer,admin'])->group(function () {
-    Route::get('/my-events', [\App\Http\Controllers\API\EventController::class, 'myEvents']);
+    Route::get('/my-events', [EventController::class, 'myEvents']);
 });
-
-
-
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user());
 
     // Read: all authenticated users
-    Route::get('/events', [\App\Http\Controllers\API\EventController::class, 'index']);
-    Route::get('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'show']);
+    Route::get('/events', [EventController::class, 'index']);
+    Route::get('/events/{event}', [EventController::class, 'show']);
 
     // Write: organizers/admins only
-    Route::post('/events', [\App\Http\Controllers\API\EventController::class, 'store'])->middleware('role:organizer,admin');
-    Route::put('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'update'])->middleware('role:organizer,admin');
-    // Route::put('/events/{event}', 'API\EventController@update')
-    // ->middleware('role:organizer,admin');
-    Route::delete('/events/{event}', [\App\Http\Controllers\API\EventController::class, 'destroy'])->middleware('role:organizer,admin');
+    Route::post('/events', [EventController::class, 'store'])->middleware('role:organizer,admin');
+    Route::put('/events/{event}', [EventController::class, 'update'])->middleware('role:organizer,admin');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->middleware('role:organizer,admin');
+
+    //event approve and reject
+    Route::put('/events/{event}/approve', [EventController::class, 'approveEvent'])->middleware('role:admin');
+    Route::put('/events/{event}/reject',  [EventController::class, 'rejectEvent'])->middleware('role:admin');
 
     // Registrations & attendance
-    Route::post('/events/{event}/register', [\App\Http\Controllers\API\EventRegistrationController::class, 'register']);
-    Route::post('/registrations/{registration}/checkin', [\App\Http\Controllers\API\EventRegistrationController::class, 'checkIn'])->middleware('role:organizer,admin');
-    Route::get('/my-registrations', [\App\Http\Controllers\API\EventRegistrationController::class, 'myRegistrations']);
+    Route::post('/events/{event}/register', [EventRegistrationController::class, 'register']);
+    Route::post('/registrations/{registration}/checkin', [EventRegistrationController::class, 'checkIn'])->middleware('role:organizer,admin');
+    Route::get('/my-registrations', [EventRegistrationController::class, 'myRegistrations']);
+
+    //Export Registration
+    Route::get('/admin/export-registrations', [AdminReportsController::class, 'exportRegistrations'])->middleware('role:admin');
 
     // Feedback
-    Route::post('/events/{event}/feedback', [\App\Http\Controllers\API\FeedbackController::class, 'submit']);
-    Route::get('/events/{event}/feedbacks', [\App\Http\Controllers\API\FeedbackController::class, 'list']);
+    Route::post('/events/{event}/feedback', [FeedbackController::class, 'submit']);
+    Route::get('/events/{event}/feedbacks', [FeedbackController::class, 'list']);
 
     // Notifications
-    Route::get('/notifications', [\App\Http\Controllers\API\NotificationController::class, 'index']);
-    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\API\NotificationController::class, 'markRead']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/send-all', [NotificationController::class, 'sendNotificationToAll'])->middleware('role:admin');
+    Route::post('/notifications/send', [NotificationController::class, 'sendNotificationToAll'])->middleware('role:admin');
+
+    // File uploads
+    Route::post('/upload/avatar', [FileUploadController::class, 'uploadUserAvatar']);
+    Route::post('/events/{event}/upload/poster', [FileUploadController::class, 'uploadEventPoster'])->middleware('role:organizer,admin');
+    Route::post('/events/{event}/upload/gallery', [FileUploadController::class, 'uploadEventGallery'])->middleware('role:organizer,admin');
+    Route::delete('/media/{media}', [FileUploadController::class, 'deleteEventMedia'])->middleware('role:organizer,admin');
+
+    // User profile
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
+
+    // QR Code system
+    Route::get('/events/{event}/qr-code', [QRCodeController::class, 'getRegistrationQR']);
+    Route::post('/qr/scan', [QRCodeController::class, 'scanQR'])->middleware('role:organizer,admin');
+    Route::get('/registrations/{registration}/qr', [QRCodeController::class, 'generateQR'])->middleware('role:organizer,admin');
+
+    // Email system
+    Route::post('/admin/send-announcement', [EmailController::class, 'sendAnnouncement'])->middleware('role:admin');
+
+    // Admin management
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/users', [AdminController::class, 'getUsers']);
+        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::get('/admin/stats', [AdminController::class, 'getStats']);
+    });
 });
 
 --------------------------------------------------------------------------

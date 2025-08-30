@@ -6,12 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Notification;
+use App\Events\NewNotification;
+use App\Services\NotificationService;
 
 class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $notifs = $request->user()->notifications()->get();
+        $user = $request->user();
+        $limit = $request->get('limit', 10);
+        
+        $notifs = Notification::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
         return response()->json($notifs);
     }
 
@@ -27,17 +35,31 @@ class NotificationController extends Controller
         $data = $request->validate([
             'title' => 'required|string',
             'message' => 'required|string',
+            'recipients' => 'sometimes|in:all,students,organizers'
         ]);
 
-        $users = User::all();
-        foreach ($users as $user) {
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => $data['title'],
-                'message' => $data['message'],
-            ]);
+        $query = User::query();
+        $recipients = $data['recipients'] ?? 'all';
+        
+        if ($recipients === 'students') {
+            $query->where('role', 'student');
+        } elseif ($recipients === 'organizers') {
+            $query->where('role', 'organizer');
         }
 
-        return response()->json(['message' => 'Notifications sent to all users']);
+        $users = $query->get();
+        
+        $notificationService = new NotificationService();
+        $sentCount = $notificationService->sendNotification(
+            $users, 
+            $data['title'], 
+            $data['message'], 
+            'admin_announcement'
+        );
+
+        return response()->json([
+            'message' => "Notifications sent to {$sentCount} users",
+            'sent_count' => $sentCount
+        ]);
     }
 }

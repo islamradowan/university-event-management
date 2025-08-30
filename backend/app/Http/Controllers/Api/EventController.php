@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Events\EventUpdated;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -11,27 +13,31 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $limit = $request->get('limit', 20);
 
-        if ($request->query('status') === 'pending') {
-            if (!$user || $user->role !== 'admin') {
-                return response()->json(['message' => 'Forbidden'], 403);
-            }
-            return Event::with(['organizer','registrations'])
-                ->where('status', 'pending')
-                ->orderByDesc('start_at')
-                ->get();
+        // Admin can see all events, others only approved
+        $query = Event::with(['organizer:id,name', 'media:id,event_id,file_path,type'])
+            ->withCount('registrations');
+
+        if ($user && $user->role === 'admin') {
+            // Admin sees all events
+            $query->orderBy('created_at', 'desc');
+        } else {
+            // Non-admin users only see approved events
+            $query->where('status', 'approved')->orderBy('start_at');
         }
-
-        return Event::with(['organizer','media'])
-            ->where('status', 'approved')
-            ->orderBy('start_at')
-            ->get();
+        
+        return $query->limit($limit)->get();
     }
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        return Event::with('organizer')
+        $limit = $request->get('limit', 10);
+        
+        return Event::with('organizer:id,name')
             ->where('status', 'approved')
+            ->where('start_at', '>=', now())
             ->orderBy('start_at')
+            ->limit($limit)
             ->get();
     }
 
@@ -84,6 +90,7 @@ class EventController extends Controller
         ]);
 
         $event->update($data);
+        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
@@ -113,12 +120,74 @@ class EventController extends Controller
     public function approveEvent(Event $event)
     {
         $event->update(['status' => 'approved']);
+        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
     public function rejectEvent(Event $event)
     {
         $event->update(['status' => 'rejected']);
+        broadcast(new EventUpdated($event));
+        return response()->json($event);
+    }
+
+    public function createRecurring(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
+            'start_time' => 'required',
+            'duration' => 'required|integer|min:1',
+            'location' => 'nullable|string',
+            'category' => 'nullable|string',
+            'capacity' => 'nullable|integer',
+            'enable_waitlist' => 'boolean',
+            'recurring_pattern' => 'required|array'
+        ]);
+
+        $eventData = [
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'start_at' => $data['start_date'] . ' ' . $data['start_time'],
+            'location' => $data['location'],
+            'category' => $data['category'],
+            'capacity' => $data['capacity'],
+            'enable_waitlist' => $data['enable_waitlist'],
+            'organizer_id' => $request->user()->id,
+            'status' => 'pending'
+        ];
+
+        $eventService = new EventService();
+        $events = $eventService->createRecurringEvents($eventData, $data['recurring_pattern']);
+
+        return response()->json(['events' => $events]);
+    }
+
+    public function getTemplates()
+    {
+        $templates = Event::where('is_template', true)->get();
+        return response()->json($templates);
+    }
+
+    public function createFromTemplate(Request $request)
+    {
+        $data = $request->validate([
+            'template_id' => 'required|exists:events,id',
+            'title' => 'required|string',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date'
+        ]);
+
+        $eventService = new EventService();
+        $event = $eventService->createFromTemplate($data['template_id'], [
+            'title' => $data['title'],
+            'start_at' => $data['start_at'],
+            'end_at' => $data['end_at'],
+            'organizer_id' => $request->user()->id,
+            'status' => 'pending'
+        ]);
+
         return response()->json($event);
     }
 }

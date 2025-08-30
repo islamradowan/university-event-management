@@ -1,8 +1,8 @@
 <template>
   <article class="bg-white rounded shadow overflow-hidden">
     <div class="h-36 bg-slate-100 flex items-center justify-center text-slate-500">
-      <span v-if="!event.poster">{{ event.title }}</span>
-      <img v-if="event.poster" :src="event.poster" alt="poster" class="w-full h-36 object-cover" />
+      <span v-if="!posterUrl">{{ event.title }}</span>
+      <img v-if="posterUrl" :src="posterUrl" alt="poster" class="w-full h-36 object-cover" />
     </div>
     <div class="p-4">
       <h3 class="font-semibold">{{ event.title }}</h3>
@@ -33,6 +33,12 @@ export default {
       if (this.role === 'organizer') return `/organizer/event/${this.event.id}`
       if (this.role === 'admin') return `/admin/events`
       return `/student/event/${this.event.id}`
+    },
+    posterUrl() {
+      if (this.event.poster_path) {
+        return `http://localhost:8000/storage/${this.event.poster_path}`
+      }
+      return this.event.poster || null
     }
   }
 }

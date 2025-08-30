@@ -21,7 +21,11 @@ class Event extends Model
         'organizer_id',
         'poster_path',
         'capacity',
-        'featured'
+        'featured',
+        'enable_waitlist',
+        'recurring_pattern',
+        'parent_event_id',
+        'is_template'
     ];
 
     // Use casts in Laravel 10
@@ -48,5 +52,20 @@ class Event extends Model
     public function feedbacks()
     {
         return $this->hasMany(Feedback::class);
+    }
+
+    public function waitlist()
+    {
+        return $this->hasMany(EventWaitlist::class);
+    }
+
+    public function childEvents()
+    {
+        return $this->hasMany(Event::class, 'parent_event_id');
+    }
+
+    public function parentEvent()
+    {
+        return $this->belongsTo(Event::class, 'parent_event_id');
     }
 }

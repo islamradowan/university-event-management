@@ -8,25 +8,31 @@ import PublicLogin from '@/pages/Public/PublicLogin.vue'
 import PublicRegister from '@/pages/Public/PublicRegister.vue'
 
 // Student
-import StudentDashboard from '@/pages/Student/Dashboard.vue'
-import StudentEventDetails from '@/pages/Student/EventDetails.vue'
 import MyEvents from '@/pages/Student/MyEvents.vue'
+import StudentCalendar from '@/pages/Student/Calendar.vue'
+import SearchEvents from '@/pages/Student/SearchEvents.vue'
 
 // Organizer
-import OrganizerDashboard from '@/pages/Organizer/Dashboard.vue'
 import CreateEvent from '@/pages/Organizer/CreateEvent.vue'
 import EditEvent from '@/pages/Organizer/EditEvent.vue'
 import OrganizerEventDetails from '@/pages/Organizer/EventDetails.vue'
+import OrganizerCalendar from '@/pages/Organizer/Calendar.vue'
 
 // Admin
-import AdminDashboard from '@/pages/Admin/Dashboard.vue'
 import AdminManageEvents from '@/pages/Admin/AdminManageEvents.vue'
 import ManageUsers from '@/pages/Admin/ManageUsers.vue'
-import AdminReports from '@/pages/Admin/AdminReports.vue'
+import SendAnnouncement from '@/pages/Admin/SendAnnouncement.vue'
+import AdminCalendar from '@/pages/Admin/Calendar.vue'
+import Reports from '@/pages/Admin/Reports.vue'
+
+// Profile
+import UserProfile from '@/pages/Profile/UserProfile.vue'
 
 // Utility
 import NotFound from '@/pages/Utility/NotFound.vue'
 import UtilityMaintenance from '@/pages/Utility/UtilityMaintenance.vue'
+import CalendarExport from '@/pages/Utility/CalendarExport.vue'
+import Notifications from '@/pages/Utility/Notifications.vue'
 
 Vue.use(Router)
 
@@ -36,16 +42,23 @@ const router = new Router({
     { path: '/', component: PublicLanding },
     { path: '/login', component: PublicLogin },
     { path: '/register', component: PublicRegister },
+    { path: '/forgot-password', component: () => import('@/pages/Public/ForgotPassword.vue') },
+    { path: '/reset-password', component: () => import('@/pages/Public/ResetPassword.vue') },
+    { 
+      path: '/profile', 
+      component: UserProfile, 
+      meta: { requiresAuth: true }
+    },
 
     // Student
     { 
       path: '/student/dashboard', 
-      component: StudentDashboard, 
+      component: () => import('@/pages/Student/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'student' }
     },
     { 
       path: '/student/event/:id', 
-      component: StudentEventDetails, 
+      component: () => import('@/pages/Student/EventDetails.vue'), 
       props: true, 
       meta: { requiresAuth: true, role: 'student' }
     },
@@ -54,11 +67,21 @@ const router = new Router({
       component: MyEvents, 
       meta: { requiresAuth: true, role: 'student' }
     },
+    { 
+      path: '/student/calendar', 
+      component: StudentCalendar, 
+      meta: { requiresAuth: true, role: 'student' }
+    },
+    { 
+      path: '/student/search', 
+      component: SearchEvents, 
+      meta: { requiresAuth: true, role: 'student' }
+    },
 
     // Organizer
     { 
       path: '/organizer/dashboard', 
-      component: OrganizerDashboard, 
+      component: () => import('@/pages/Organizer/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'organizer' }
     },
     { 
@@ -78,11 +101,16 @@ const router = new Router({
       props: true, 
       meta: { requiresAuth: true, role: 'organizer' }
     },
+    { 
+      path: '/organizer/calendar', 
+      component: OrganizerCalendar, 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
 
     // Admin
     { 
       path: '/admin/dashboard', 
-      component: AdminDashboard, 
+      component: () => import('@/pages/Admin/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'admin' }
     },
     { 
@@ -91,18 +119,43 @@ const router = new Router({
       meta: { requiresAuth: true, role: 'admin' }
     },
     { 
+      path: '/admin/reports', 
+      component: Reports, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    { 
       path: '/admin/users', 
       component: ManageUsers, 
       meta: { requiresAuth: true, role: 'admin' }
     },
     { 
-      path: '/admin/reports', 
-      component: AdminReports, 
+      path: '/admin/announcements', 
+      component: SendAnnouncement, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    { 
+      path: '/admin/calendar', 
+      component: AdminCalendar, 
       meta: { requiresAuth: true, role: 'admin' }
     },
     
     { path: '/maintenance', component: UtilityMaintenance },
-    { path: '*', component: NotFound }
+    { 
+      path: '/calendar/export', 
+      component: CalendarExport, 
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/notifications', 
+      component: Notifications, 
+      meta: { requiresAuth: true }
+    },
+    { 
+      path: '/profile/notifications', 
+      component: () => import('@/pages/Profile/NotificationPreferences.vue'), 
+      meta: { requiresAuth: true }
+    },
+    { path: '*', name: 'NotFound', component: NotFound }
   ]
 })
 

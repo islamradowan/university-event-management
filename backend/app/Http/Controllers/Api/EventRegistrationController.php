@@ -5,7 +5,11 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Mail\EventRegistrationConfirmation;
+use App\Events\AttendanceUpdated;
+use App\Events\EventUpdated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class EventRegistrationController extends Controller
@@ -24,6 +28,13 @@ class EventRegistrationController extends Controller
             'qr_token'=>Str::uuid()
         ]);
 
+        // Send confirmation email
+        try {
+            Mail::to($user->email)->send(new EventRegistrationConfirmation($user, $event));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send registration confirmation email: ' . $e->getMessage());
+        }
+
         return response()->json($reg,201);
     }
 
@@ -31,6 +42,9 @@ class EventRegistrationController extends Controller
     {
         $registration->checked_in_at = now();
         $registration->save();
+
+        // Broadcast attendance update
+        broadcast(new AttendanceUpdated($registration));
 
         return response()->json($registration);
     }

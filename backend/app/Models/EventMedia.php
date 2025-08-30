@@ -11,8 +11,8 @@ class EventMedia extends Model
 
     protected $fillable = [
         'event_id',
-        'type',       // 'image', 'video', 'document'
-        'poster_path',       // storage path
+        'file_path',
+        'type',
         'caption'
     ];
 

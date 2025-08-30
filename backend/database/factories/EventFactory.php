@@ -23,7 +23,7 @@ class EventFactory extends Factory
             'end_at' => $end,
             'location' => $this->faker->city,
             'category' => $this->faker->randomElement(['Workshop','Seminar','Competition','Festival']),
-            'status' => $this->faker->randomElement(['pending','approved','rejected']),
+            'status' => $this->faker->randomElement(['pending','pending','pending','approved','rejected']),
             'organizer_id' => null, // assign later in seeder
             'poster_path' => null,
             'capacity' => rand(10,100),
