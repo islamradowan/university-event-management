@@ -17,7 +17,8 @@ class EventController extends Controller
 
         // Admin can see all events, others only approved
         $query = Event::with(['organizer:id,name', 'media:id,event_id,file_path,type'])
-            ->withCount('registrations');
+            ->withCount('registrations')
+            ->select('*');
 
         if ($user && $user->role === 'admin') {
             // Admin sees all events
@@ -50,7 +51,7 @@ class EventController extends Controller
     public function myEvents(Request $request)
     {
         $user = $request->user();
-        return Event::with('registrations', 'feedbacks')
+        return Event::with(['registrations', 'feedbacks', 'organizer:id,name'])
                     ->where('organizer_id', $user->id)
                     ->orderByDesc('start_at')
                     ->get();
@@ -66,10 +67,11 @@ class EventController extends Controller
             'location'=>'nullable|string',
             'category'=>'nullable|string',
             'capacity'=>'nullable|integer',
-            'featured'=>'boolean',
+            'featured'=>'nullable|boolean',
         ]);
 
         $data['organizer_id'] = $request->user()->id;
+        $data['status'] = 'pending'; // Set default status
         $event = Event::create($data);
         return response()->json($event,201);
     }
@@ -84,19 +86,22 @@ class EventController extends Controller
             'end_at'=>'sometimes|date|after:start_at',
             'location'=>'nullable|string',
             'category'=>'nullable|string',
-            'capacity'=>'nullable|integer',
-            'featured'=>'boolean',
-            'status'=>'in:pending,approved,rejected'
+            'capacity'=>'nullable|integer'
         ]);
 
         $event->update($data);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
-    public function destroy(Event $event)
+    public function destroy(Request $request, Event $event)
     {
-        $this->authorize('delete',$event); // optional
+        $user = $request->user();
+        
+        // Allow admin to delete any event, organizer can only delete their own
+        if ($user->role !== 'admin' && $event->organizer_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
         $event->delete();
         return response()->json(['message'=>'Deleted']);
     }
@@ -120,14 +125,12 @@ class EventController extends Controller
     public function approveEvent(Event $event)
     {
         $event->update(['status' => 'approved']);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
     public function rejectEvent(Event $event)
     {
         $event->update(['status' => 'rejected']);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 

@@ -16,13 +16,13 @@ class DatabaseSeeder extends Seeder
     {
         // 1) Create users
         $admins = User::factory()->count(2)->state(['role'=>'admin'])->create();
-        $organizers = User::factory()->count(5)->state(['role'=>'organizer'])->create();
+        $organizers = User::factory()->count(10)->state(['role'=>'organizer'])->create();
         $students = User::factory()->count(50)->state(['role'=>'student'])->create();
 
-        // 2) Create events for organizers
+        // 2) Create 100 events for organizers
         $events = collect();
         foreach ($organizers as $org) {
-            $ev = Event::factory()->count(3)->create(['organizer_id'=>$org->id]);
+            $ev = Event::factory()->count(20)->create(['organizer_id'=>$org->id]);
             $events = $events->merge($ev);
         }
 

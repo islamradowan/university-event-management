@@ -352,14 +352,17 @@ export default {
       }
     },
     async loadNotifications() {
-      if (!this.$store.getters.isLoggedIn) return
+      if (!this.$store.getters.isLoggedIn) {
+        this.notifications = []
+        this.unreadCount = 0
+        return
+      }
       try {
         const response = await this.$http.get('/api/notifications?limit=10')
         this.notifications = response.data || []
         this.unreadCount = this.notifications.filter(n => !n.read_at).length
-
       } catch (error) {
-
+        // Silently fail - don't log errors for unauthenticated requests
         this.notifications = []
         this.unreadCount = 0
       }

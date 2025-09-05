@@ -56,7 +56,7 @@
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">My Registrations</p>
-              <p class="text-2xl font-bold text-gray-900">0</p>
+              <p class="text-2xl font-bold text-gray-900">{{ myRegistrations.length }}</p>
             </div>
           </div>
         </div>
@@ -190,13 +190,35 @@
               </router-link>
               
               <button 
+                v-if="!isRegistered(event.id)"
                 @click="quickRegister(event.id)" 
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                :disabled="registeringEvents[event.id]"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center disabled:opacity-50"
               >
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg v-if="registeringEvents[event.id]" class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
-                Register
+                {{ registeringEvents[event.id] ? 'Registering...' : 'Register' }}
+              </button>
+              
+              <button 
+                v-else
+                @click="quickUnregister(event.id)" 
+                :disabled="unregisteringEvents[event.id]"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center disabled:opacity-50"
+              >
+                <svg v-if="unregisteringEvents[event.id]" class="animate-spin w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                {{ unregisteringEvents[event.id] ? 'Unregistering...' : 'Unregister' }}
               </button>
             </div>
           </div>
@@ -226,7 +248,10 @@ export default {
   data() {
     return { 
       events: [],
+      myRegistrations: [],
       loading: true,
+      registeringEvents: {},
+      unregisteringEvents: {},
       q: '',
       selectedCategory: '',
       sortBy: 'date',
@@ -237,6 +262,7 @@ export default {
   },
   async created() {
     await this.loadEvents()
+    await this.loadMyRegistrations()
   },
   computed: {
     filteredEvents() {
@@ -283,18 +309,45 @@ export default {
         this.loading = false
       }
     },
+    async loadMyRegistrations() {
+      try {
+        this.myRegistrations = await this.$store.dispatch('fetchMyRegistrations')
+      } catch (error) {
+        console.error('Failed to load registrations:', error)
+      }
+    },
     onSearch(q) { 
       this.q = q
       this.currentPage = 1
     },
     async quickRegister(eventId) {
       try {
+        this.$set(this.registeringEvents, eventId, true)
         await this.$store.dispatch('registerForEvent', eventId)
+        await this.loadMyRegistrations()
         alert('Successfully registered for event!')
       } catch (err) {
         console.error(err)
         alert('Registration failed. Please try again.')
+      } finally {
+        this.$set(this.registeringEvents, eventId, false)
       }
+    },
+    async quickUnregister(eventId) {
+      try {
+        this.$set(this.unregisteringEvents, eventId, true)
+        await this.$store.dispatch('unregisterFromEvent', eventId)
+        await this.loadMyRegistrations()
+        alert('Successfully unregistered from event!')
+      } catch (err) {
+        console.error(err)
+        alert('Unregistration failed. Please try again.')
+      } finally {
+        this.$set(this.unregisteringEvents, eventId, false)
+      }
+    },
+    isRegistered(eventId) {
+      return this.myRegistrations.some(reg => reg.event_id === eventId)
     },
     formatDate(date) {
       if (!date) return 'TBD'

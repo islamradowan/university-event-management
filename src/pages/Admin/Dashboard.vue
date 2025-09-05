@@ -173,40 +173,40 @@
                 <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
                 <span class="text-sm text-gray-600">Approved</span>
               </div>
-              <span class="text-sm font-medium text-gray-900">65%</span>
+              <span class="text-sm font-medium text-gray-900">{{ eventStats.approved }} ({{ eventStats.approvedPercent }}%)</span>
             </div>
             <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
                 <span class="text-sm text-gray-600">Pending</span>
               </div>
-              <span class="text-sm font-medium text-gray-900">25%</span>
+              <span class="text-sm font-medium text-gray-900">{{ eventStats.pending }} ({{ eventStats.pendingPercent }}%)</span>
             </div>
             <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <div class="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
                 <span class="text-sm text-gray-600">Rejected</span>
               </div>
-              <span class="text-sm font-medium text-gray-900">10%</span>
+              <span class="text-sm font-medium text-gray-900">{{ eventStats.rejected }} ({{ eventStats.rejectedPercent }}%)</span>
             </div>
           </div>
         </div>
 
         <!-- User Growth -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-6">User Growth</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-6">User Breakdown</h3>
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600">Students</span>
-              <span class="text-sm font-medium text-gray-900">2,450</span>
+              <span class="text-sm font-medium text-gray-900">{{ userStats.students }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600">Organizers</span>
-              <span class="text-sm font-medium text-gray-900">125</span>
+              <span class="text-sm font-medium text-gray-900">{{ userStats.organizers }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-600">Admins</span>
-              <span class="text-sm font-medium text-gray-900">8</span>
+              <span class="text-sm font-medium text-gray-900">{{ userStats.admins }}</span>
             </div>
           </div>
         </div>
@@ -225,6 +225,8 @@ export default {
     return { 
       stats: { events: 0, users: 0, registrations: 0 },
       pendingEventsList: [],
+      allEvents: [],
+      allUsers: [],
       loading: true,
       recentActivity: [
         {
@@ -260,6 +262,28 @@ export default {
   computed: {
     pendingEvents() {
       return this.pendingEventsList.length
+    },
+    eventStats() {
+      const total = this.allEvents.length || 1
+      const approved = this.allEvents.filter(e => e.status === 'approved').length
+      const pending = this.allEvents.filter(e => e.status === 'pending').length
+      const rejected = this.allEvents.filter(e => e.status === 'rejected').length
+      
+      return {
+        approved,
+        pending,
+        rejected,
+        approvedPercent: Math.round((approved / total) * 100),
+        pendingPercent: Math.round((pending / total) * 100),
+        rejectedPercent: Math.round((rejected / total) * 100)
+      }
+    },
+    userStats() {
+      const students = this.allUsers.filter(u => u.role === 'student').length
+      const organizers = this.allUsers.filter(u => u.role === 'organizer').length
+      const admins = this.allUsers.filter(u => u.role === 'admin').length
+      
+      return { students, organizers, admins }
     }
   },
   methods: {
@@ -292,12 +316,13 @@ export default {
           this.$http.get('/api/admin/stats')
         ])
         
-        const allEvents = eventsRes.data || []
-        const pendingEvents = allEvents.filter(e => e.status === 'pending')
+        this.allEvents = eventsRes.data || []
+        this.allUsers = usersRes.data || []
+        const pendingEvents = this.allEvents.filter(e => e.status === 'pending')
         
         this.stats = {
-          events: allEvents.length,
-          users: usersRes.data?.length || 0,
+          events: this.allEvents.length,
+          users: this.allUsers.length,
           registrations: statsRes.data?.registrations || 0
         }
         
@@ -307,14 +332,8 @@ export default {
           organizer: e.organizer?.name || 'Unknown'
         }))
         
-
       } catch (err) {
         console.error('Failed to load dashboard data:', err)
-        // Create test pending events if API fails
-        this.pendingEventsList = [
-          { id: 1, title: 'Test Pending Event 1', organizer: 'John Doe' },
-          { id: 2, title: 'Test Pending Event 2', organizer: 'Jane Smith' }
-        ]
       } finally {
         this.loading = false
       }

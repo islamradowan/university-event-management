@@ -37,7 +37,7 @@ Route::middleware(['auth:sanctum', 'role:organizer,admin'])->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => $request->user());
 
-    // Read: all authenticated users
+    // Read: all authenticated users (students see only approved events)
     Route::get('/events', [EventController::class, 'index']);
     Route::get('/events/{event}', [EventController::class, 'show']);
 
@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Registrations & attendance
     Route::post('/events/{event}/register', [EventRegistrationController::class, 'register']);
+    Route::delete('/events/{event}/unregister', [EventRegistrationController::class, 'unregister']);
     Route::post('/registrations/{registration}/checkin', [EventRegistrationController::class, 'checkIn'])->middleware('role:organizer,admin');
     Route::get('/my-registrations', [EventRegistrationController::class, 'myRegistrations']);
 

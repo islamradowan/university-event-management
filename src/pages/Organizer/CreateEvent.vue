@@ -213,12 +213,20 @@ export default {
     async create() {
       try {
         this.submitting = true
-        await this.$http.post('/api/events', formToEventPayload(this.form))
+        
+        // Create event first
+        const eventResponse = await this.$http.post('/api/events', formToEventPayload(this.form))
+        const eventId = eventResponse.data.id
+        
+        // Upload poster if selected
+        if (this.form.poster) {
+          await this.uploadPoster(eventId)
+        }
+        
         alert('Event created successfully! It will be reviewed by administrators.')
         this.$router.push('/organizer/dashboard')
       } catch (err) {
-        console.error(err)
-        alert('Failed to create event. Please try again.')
+        alert(`Failed to create event: ${err.response?.data?.message || 'Please try again.'}`)
       } finally {
         this.submitting = false
       }
@@ -239,6 +247,16 @@ export default {
       if (file) {
         this.form.poster = file
       }
+    },
+    async uploadPoster(eventId) {
+      const formData = new FormData()
+      formData.append('poster', this.form.poster)
+      
+      await this.$http.post(`/api/events/${eventId}/upload/poster`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
     }
   }
 }

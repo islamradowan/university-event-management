@@ -94,20 +94,54 @@
         </div>
       </div>
 
+      <!-- Status Filter -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+        <div class="flex flex-wrap gap-2">
+          <button 
+            @click="statusFilter = 'all'"
+            :class="statusFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            All Events ({{ events.length }})
+          </button>
+          <button 
+            @click="statusFilter = 'approved'"
+            :class="statusFilter === 'approved' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Approved ({{ approvedEvents }})
+          </button>
+          <button 
+            @click="statusFilter = 'pending'"
+            :class="statusFilter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Pending ({{ pendingEvents }})
+          </button>
+          <button 
+            @click="statusFilter = 'rejected'"
+            :class="statusFilter === 'rejected' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Rejected ({{ rejectedEvents }})
+          </button>
+        </div>
+      </div>
+
       <!-- Events Grid -->
       <div v-if="loading" class="text-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
         <p class="text-gray-600 mt-4">Loading your events...</p>
       </div>
 
-      <div v-else-if="events.length === 0" class="text-center py-12">
+      <div v-else-if="filteredEvents.length === 0" class="text-center py-12">
         <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No events yet</h3>
-        <p class="text-gray-600 mb-6">Create your first event to get started organizing amazing experiences.</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">{{ events.length === 0 ? 'No events yet' : `No ${statusFilter} events` }}</h3>
+        <p class="text-gray-600 mb-6">{{ events.length === 0 ? 'Create your first event to get started organizing amazing experiences.' : `You don't have any ${statusFilter} events.` }}</p>
         <router-link to="/organizer/create" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 inline-flex items-center">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -219,7 +253,8 @@ export default {
       events: [],
       loading: true,
       currentPage: 1,
-      itemsPerPage: 6
+      itemsPerPage: 6,
+      statusFilter: 'all'
     }
   },
   async created() {
@@ -232,12 +267,19 @@ export default {
     pendingEvents() {
       return this.events.filter(e => e.status === 'pending').length
     },
+    rejectedEvents() {
+      return this.events.filter(e => e.status === 'rejected').length
+    },
+    filteredEvents() {
+      if (this.statusFilter === 'all') return this.events
+      return this.events.filter(e => e.status === this.statusFilter)
+    },
     paginatedEvents() {
       const start = (this.currentPage - 1) * this.itemsPerPage
-      return this.events.slice(start, start + this.itemsPerPage)
+      return this.filteredEvents.slice(start, start + this.itemsPerPage)
     },
     totalPages() {
-      return Math.ceil(this.events.length / this.itemsPerPage)
+      return Math.ceil(this.filteredEvents.length / this.itemsPerPage)
     }
   },
   methods: {

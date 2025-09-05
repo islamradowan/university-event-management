@@ -138,6 +138,12 @@ const router = new Router({
       component: AdminCalendar, 
       meta: { requiresAuth: true, role: 'admin' }
     },
+    { 
+      path: '/admin/event/:id', 
+      component: () => import('@/pages/Student/EventDetails.vue'), 
+      props: true, 
+      meta: { requiresAuth: true, role: 'admin' }
+    },
     
     { path: '/maintenance', component: UtilityMaintenance },
     { 
@@ -167,6 +173,18 @@ router.beforeEach(async (to, from, next) => {
   // If no user in store, try fetching from backend
   if (!store.state.user) {
     await store.dispatch('fetchUser').catch(() => {})
+  }
+
+  // Redirect logged-in users from home page to their dashboard
+  if (to.path === '/' && store.getters.isLoggedIn) {
+    const role = store.getters.userRole
+    if (role === 'admin') {
+      return next('/admin/dashboard')
+    } else if (role === 'organizer') {
+      return next('/organizer/dashboard')
+    } else if (role === 'student') {
+      return next('/student/dashboard')
+    }
   }
 
   if (requiresAuth && !store.getters.isLoggedIn) {

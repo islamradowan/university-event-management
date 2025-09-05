@@ -34,8 +34,17 @@ export default new Vuex.Store({
     },
 
     async logout({ commit }) {
-      await http.post('/api/logout')
+      try {
+        await http.post('/api/logout')
+      } catch (error) {
+        // Ignore logout errors
+      }
       commit('clearUser')
+      // Clear all cookies and reload page to ensure clean state
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      window.location.href = '/login'
     },
 
     // View All Events 
@@ -94,7 +103,16 @@ export default new Vuex.Store({
 
     // Registrations
     async registerForEvent(_, eventId) {
-      const res = await http.post(`/api/events/${eventId}/register`)
+      try {
+        const res = await http.post(`/api/events/${eventId}/register`)
+        return res.data
+      } catch (error) {
+        console.error('Registration error:', error.response?.data)
+        throw error
+      }
+    },
+    async unregisterFromEvent(_, eventId) {
+      const res = await http.delete(`/api/events/${eventId}/unregister`)
       return res.data
     },
     async fetchMyRegistrations() {

@@ -318,12 +318,15 @@ export default {
     async register() {
       try {
         this.registering = true
+        console.log('Attempting to register for event:', this.event.id)
+        console.log('User:', this.$store.state.user)
         await this.$store.dispatch('registerForEvent', this.event.id)
         this.isRegistered = true
         alert('Registered successfully! Check "My Events" for your QR code.')
       } catch (err) {
-        console.error('Failed to register:', err)
-        alert('Registration failed. Please try again.')
+        console.error('Registration failed:', err)
+        console.error('Error details:', err.response?.data)
+        alert(`Registration failed: ${err.response?.data?.message || 'Please try again.'}`)
       } finally {
         this.registering = false
       }
