@@ -29,6 +29,7 @@
           <template v-if="$store.getters.userRole === 'organizer'">
             <router-link to="/organizer/dashboard" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">Dashboard</router-link>
             <router-link to="/organizer/calendar" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">Calendar</router-link>
+            <router-link to="/organizer/announcements" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">Announcements</router-link>
             <router-link to="/organizer/create" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all">Create Event</router-link>
           </template>
 
@@ -132,6 +133,7 @@
         <template v-if="$store.getters.userRole === 'organizer'">
           <router-link @click="showMobileMenu = false" to="/organizer/dashboard" class="block px-3 py-2 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">Dashboard</router-link>
           <router-link @click="showMobileMenu = false" to="/organizer/calendar" class="block px-3 py-2 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">Calendar</router-link>
+          <router-link @click="showMobileMenu = false" to="/organizer/announcements" class="block px-3 py-2 text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">Announcements</router-link>
           <router-link @click="showMobileMenu = false" to="/organizer/create" class="block px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-center">Create Event</router-link>
         </template>
 

@@ -122,10 +122,12 @@
         <div v-for="event in paginatedEvents" :key="event.id" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
           <!-- Event Image -->
           <div class="relative h-48 overflow-hidden">
-            <img 
+            <OptimizedImage 
               v-if="event.poster" 
               :src="event.poster" 
               :alt="event.title"
+              :width="600"
+              :quality="80"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div 
@@ -240,11 +242,12 @@
 <script>
 import AppNavbar from '@/components/AppNavbar.vue'
 import Pagination from '@/components/Pagination.vue'
+import OptimizedImage from '@/components/OptimizedImage.vue'
 import { apiEventToView } from '@/utils/apiMappers'
 
 export default {
   name: 'StudentDashboard',
-  components: { AppNavbar, Pagination },
+  components: { AppNavbar, Pagination, OptimizedImage },
   data() {
     return { 
       events: [],
@@ -324,7 +327,7 @@ export default {
       try {
         this.$set(this.registeringEvents, eventId, true)
         await this.$store.dispatch('registerForEvent', eventId)
-        await this.loadMyRegistrations()
+        this.myRegistrations.push({ event_id: eventId })
         alert('Successfully registered for event!')
       } catch (err) {
         console.error(err)
@@ -337,7 +340,7 @@ export default {
       try {
         this.$set(this.unregisteringEvents, eventId, true)
         await this.$store.dispatch('unregisterFromEvent', eventId)
-        await this.loadMyRegistrations()
+        this.myRegistrations = this.myRegistrations.filter(reg => reg.event_id !== eventId)
         alert('Successfully unregistered from event!')
       } catch (err) {
         console.error(err)

@@ -1,4 +1,4 @@
-export const performanceMixin = {
+export const loadingMixin = {
   data() {
     return {
       loading: false

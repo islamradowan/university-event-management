@@ -7,8 +7,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     user: null,
-    eventsCache: null,
-    cacheTimestamp: null
+    eventsCache: new Map(),
+    pagination: { page: 1, limit: 20, total: 0 }
   },
   mutations: {
     setUser(state, user) {
@@ -17,9 +17,12 @@ export default new Vuex.Store({
     clearUser(state) {
       state.user = null
     },
-    setEventsCache(state, { events, timestamp }) {
-      state.eventsCache = events
-      state.cacheTimestamp = timestamp
+    setEventsPage(state, { page, events, total }) {
+      state.eventsCache.set(page, events)
+      state.pagination = { ...state.pagination, page, total }
+    },
+    clearEventsCache(state) {
+      state.eventsCache.clear()
     }
   },
   actions: {
@@ -40,7 +43,12 @@ export default new Vuex.Store({
         // Ignore logout errors
       }
       commit('clearUser')
-      // Clear all cookies and reload page to ensure clean state
+      commit('clearEventsCache')
+      
+      // Reset CSRF and clear cookies
+      const { resetCsrf } = await import('../http')
+      resetCsrf()
+      
       document.cookie.split(";").forEach(function(c) { 
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
@@ -66,18 +74,18 @@ export default new Vuex.Store({
       return res.data
     },
 
-    // Events (read) with caching
-    async fetchEvents({ state, commit }) {
-      const now = Date.now()
-      const cacheAge = 5 * 60 * 1000 // 5 minutes
-      
-      if (state.eventsCache && state.cacheTimestamp && (now - state.cacheTimestamp) < cacheAge) {
-        return state.eventsCache
+    // Events with pagination and caching
+    async fetchEvents({ state, commit }, { page = 1, limit = 20, force = false } = {}) {
+      if (!force && state.eventsCache.has(page)) {
+        return state.eventsCache.get(page)
       }
       
-      const res = await http.get('/api/events?limit=20')
-      commit('setEventsCache', { events: res.data, timestamp: now })
-      return res.data
+      const res = await http.get('/api/events', { params: { page, limit } })
+      const events = res.data.data || res.data
+      const total = res.data.total || events.length
+      
+      commit('setEventsPage', { page, events, total })
+      return events
     },
     async fetchEvent(_, eventId) {
       const res = await http.get(`/api/events/${eventId}`)
@@ -89,16 +97,19 @@ export default new Vuex.Store({
       const res = await http.get('/api/my-events')
       return res.data
     },
-    async createEvent(_, payload) {
+    async createEvent({ commit }, payload) {
       const res = await http.post('/api/events', payload)
+      commit('clearEventsCache') // Clear cache after create
       return res.data
     },
-    async updateEvent(_, { id, payload }) {
+    async updateEvent({ commit }, { id, payload }) {
       const res = await http.put(`/api/events/${id}`, payload)
+      commit('clearEventsCache') // Clear cache after update
       return res.data
     },
-    async deleteEvent(_, id) {
+    async deleteEvent({ commit }, id) {
       await http.delete(`/api/events/${id}`)
+      commit('clearEventsCache') // Clear cache after delete
     },
 
     // Registrations

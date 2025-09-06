@@ -228,22 +228,26 @@ export default {
   methods: {
     async approveEvent(event) {
       try {
-        await this.$http.put(`/api/events/${event.id}/approve`)
+        console.log('Approving event:', event.id)
+        const response = await this.$http.put(`/api/events/${event.id}/approve`)
+        console.log('Approve response:', response)
         event.status = 'approved'
         alert(`Event "${event.title}" approved successfully!`)
       } catch (err) {
-        console.error(err)
-        alert('Failed to approve event')
+        console.error('Approve error:', err.response || err)
+        alert(`Failed to approve event: ${err.response?.data?.message || err.message}`)
       }
     },
     async rejectEvent(event) {
       try {
-        await this.$http.put(`/api/events/${event.id}/reject`)
+        console.log('Rejecting event:', event.id)
+        const response = await this.$http.put(`/api/events/${event.id}/reject`)
+        console.log('Reject response:', response)
         event.status = 'rejected'
         alert(`Event "${event.title}" rejected`)
       } catch (err) {
-        console.error(err)
-        alert('Failed to reject event')
+        console.error('Reject error:', err.response || err)
+        alert(`Failed to reject event: ${err.response?.data?.message || err.message}`)
       }
     },
     viewEvent(event) {

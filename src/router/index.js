@@ -2,37 +2,32 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@/store'
 
-// Public
-import PublicLanding from '@/pages/Public/PublicLanding.vue'
-import PublicLogin from '@/pages/Public/PublicLogin.vue'
-import PublicRegister from '@/pages/Public/PublicRegister.vue'
+// Lazy load all components for better performance
+const PublicLanding = () => import(/* webpackChunkName: "public" */ '@/pages/Public/PublicLanding.vue')
+const PublicLogin = () => import(/* webpackChunkName: "public" */ '@/pages/Public/PublicLogin.vue')
+const PublicRegister = () => import(/* webpackChunkName: "public" */ '@/pages/Public/PublicRegister.vue')
 
-// Student
-import MyEvents from '@/pages/Student/MyEvents.vue'
-import StudentCalendar from '@/pages/Student/Calendar.vue'
-import SearchEvents from '@/pages/Student/SearchEvents.vue'
+const MyEvents = () => import(/* webpackChunkName: "student" */ '@/pages/Student/MyEvents.vue')
+const StudentCalendar = () => import(/* webpackChunkName: "student" */ '@/pages/Student/Calendar.vue')
+const SearchEvents = () => import(/* webpackChunkName: "student" */ '@/pages/Student/SearchEvents.vue')
 
-// Organizer
-import CreateEvent from '@/pages/Organizer/CreateEvent.vue'
-import EditEvent from '@/pages/Organizer/EditEvent.vue'
-import OrganizerEventDetails from '@/pages/Organizer/EventDetails.vue'
-import OrganizerCalendar from '@/pages/Organizer/Calendar.vue'
+const CreateEvent = () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/CreateEvent.vue')
+const EditEvent = () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/EditEvent.vue')
+const OrganizerEventDetails = () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/EventDetails.vue')
+const OrganizerCalendar = () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/Calendar.vue')
 
-// Admin
-import AdminManageEvents from '@/pages/Admin/AdminManageEvents.vue'
-import ManageUsers from '@/pages/Admin/ManageUsers.vue'
-import SendAnnouncement from '@/pages/Admin/SendAnnouncement.vue'
-import AdminCalendar from '@/pages/Admin/Calendar.vue'
-import Reports from '@/pages/Admin/Reports.vue'
+const AdminManageEvents = () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/AdminManageEvents.vue')
+const ManageUsers = () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/ManageUsers.vue')
+const SendAnnouncement = () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/SendAnnouncement.vue')
+const AdminCalendar = () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/Calendar.vue')
+const Reports = () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/Reports.vue')
 
-// Profile
-import UserProfile from '@/pages/Profile/UserProfile.vue'
+const UserProfile = () => import(/* webpackChunkName: "profile" */ '@/pages/Profile/UserProfile.vue')
 
-// Utility
-import NotFound from '@/pages/Utility/NotFound.vue'
-import UtilityMaintenance from '@/pages/Utility/UtilityMaintenance.vue'
-import CalendarExport from '@/pages/Utility/CalendarExport.vue'
-import Notifications from '@/pages/Utility/Notifications.vue'
+const NotFound = () => import(/* webpackChunkName: "utility" */ '@/pages/Utility/NotFound.vue')
+const UtilityMaintenance = () => import(/* webpackChunkName: "utility" */ '@/pages/Utility/UtilityMaintenance.vue')
+const CalendarExport = () => import(/* webpackChunkName: "utility" */ '@/pages/Utility/CalendarExport.vue')
+const Notifications = () => import(/* webpackChunkName: "utility" */ '@/pages/Utility/Notifications.vue')
 
 Vue.use(Router)
 
@@ -42,8 +37,8 @@ const router = new Router({
     { path: '/', component: PublicLanding },
     { path: '/login', component: PublicLogin },
     { path: '/register', component: PublicRegister },
-    { path: '/forgot-password', component: () => import('@/pages/Public/ForgotPassword.vue') },
-    { path: '/reset-password', component: () => import('@/pages/Public/ResetPassword.vue') },
+    { path: '/forgot-password', component: () => import(/* webpackChunkName: "public" */ '@/pages/Public/ForgotPassword.vue') },
+    { path: '/reset-password', component: () => import(/* webpackChunkName: "public" */ '@/pages/Public/ResetPassword.vue') },
     { 
       path: '/profile', 
       component: UserProfile, 
@@ -53,12 +48,12 @@ const router = new Router({
     // Student
     { 
       path: '/student/dashboard', 
-      component: () => import('@/pages/Student/Dashboard.vue'), 
+      component: () => import(/* webpackChunkName: "student" */ '@/pages/Student/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'student' }
     },
     { 
       path: '/student/event/:id', 
-      component: () => import('@/pages/Student/EventDetails.vue'), 
+      component: () => import(/* webpackChunkName: "student" */ '@/pages/Student/EventDetails.vue'), 
       props: true, 
       meta: { requiresAuth: true, role: 'student' }
     },
@@ -81,7 +76,7 @@ const router = new Router({
     // Organizer
     { 
       path: '/organizer/dashboard', 
-      component: () => import('@/pages/Organizer/Dashboard.vue'), 
+      component: () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'organizer' }
     },
     { 
@@ -106,11 +101,16 @@ const router = new Router({
       component: OrganizerCalendar, 
       meta: { requiresAuth: true, role: 'organizer' }
     },
+    { 
+      path: '/organizer/announcements', 
+      component: () => import(/* webpackChunkName: "organizer" */ '@/pages/Organizer/SendAnnouncement.vue'), 
+      meta: { requiresAuth: true, role: 'organizer' }
+    },
 
     // Admin
     { 
       path: '/admin/dashboard', 
-      component: () => import('@/pages/Admin/Dashboard.vue'), 
+      component: () => import(/* webpackChunkName: "admin" */ '@/pages/Admin/Dashboard.vue'), 
       meta: { requiresAuth: true, role: 'admin' }
     },
     { 
@@ -140,7 +140,7 @@ const router = new Router({
     },
     { 
       path: '/admin/event/:id', 
-      component: () => import('@/pages/Student/EventDetails.vue'), 
+      component: () => import(/* webpackChunkName: "student" */ '@/pages/Student/EventDetails.vue'), 
       props: true, 
       meta: { requiresAuth: true, role: 'admin' }
     },
@@ -158,7 +158,7 @@ const router = new Router({
     },
     { 
       path: '/profile/notifications', 
-      component: () => import('@/pages/Profile/NotificationPreferences.vue'), 
+      component: () => import(/* webpackChunkName: "profile" */ '@/pages/Profile/NotificationPreferences.vue'), 
       meta: { requiresAuth: true }
     },
     { path: '*', name: 'NotFound', component: NotFound }

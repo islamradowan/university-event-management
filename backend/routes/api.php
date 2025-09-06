@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Email system
     Route::post('/admin/send-announcement', [EmailController::class, 'sendAnnouncement'])->middleware('role:admin');
+    Route::post('/organizer/send-announcement', [EmailController::class, 'sendOrganizerAnnouncement'])->middleware('role:organizer');
 
     // Admin management
     Route::middleware('role:admin')->group(function () {
