@@ -363,7 +363,7 @@ This project is licensed under the MIT License.
 
 ## 👥 Authors
 
-University Event Management System Development Team
+Radwoan Islam
 
 ## 🐛 Known Issues
 
