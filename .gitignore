@@ -2,6 +2,8 @@
 node_modules
 /dist
 
+PERFORMANCE_OPTIMIZATION_SUMMARY.md
+Project Proposal (1).pdf
 
 # local env files
 .env.local
