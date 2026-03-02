@@ -3,7 +3,7 @@
     <div class="w-full max-w-md">
       <!-- Logo/Brand -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">UniEvents</h1>
+        <router-link to="/" class="text-3xl font-bold text-gray-900 mb-2 hover:text-indigo-600 transition-colors inline-block">UniEvents</router-link>
         <p class="text-gray-600">Sign in to your account</p>
       </div>
 
@@ -78,15 +78,7 @@
         </div>
       </div>
 
-      <!-- Quick Demo Links -->
-      <div class="mt-6 text-center">
-        <p class="text-xs text-gray-500 mb-2">Quick Demo Access:</p>
-        <div class="flex justify-center space-x-2 text-xs">
-          <button @click="quickLogin('admin')" class="px-3 py-1 bg-red-100 text-red-700 rounded">Admin</button>
-          <button @click="quickLogin('organizer')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded">Organizer</button>
-          <button @click="quickLogin('student')" class="px-3 py-1 bg-green-100 text-green-700 rounded">Student</button>
-        </div>
-      </div>
+
     </div>
   </div>
 </template>
@@ -124,18 +116,6 @@ export default {
         alert('Login failed. Please check your credentials.')
       } finally {
         this.loading = false
-      }
-    },
-    quickLogin(role) {
-      const demos = {
-        admin: { email: 'admin@demo.com', password: 'password' },
-        organizer: { email: 'organizer@demo.com', password: 'password' },
-        student: { email: 'student@demo.com', password: 'password' }
-      }
-      const demo = demos[role]
-      if (demo) {
-        this.email = demo.email
-        this.password = demo.password
       }
     }
   }

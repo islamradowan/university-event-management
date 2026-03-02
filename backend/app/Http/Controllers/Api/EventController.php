@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Events\EventUpdated;
 use App\Services\EventService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class EventController extends Controller
 {
@@ -14,31 +15,41 @@ class EventController extends Controller
     {
         $user = $request->user();
         $limit = $request->get('limit', 20);
-
-        // Admin can see all events, others only approved
-        $query = Event::with(['organizer:id,name', 'media:id,event_id,file_path,type'])
-            ->withCount('registrations');
-
-        if ($user && $user->role === 'admin') {
-            // Admin sees all events
-            $query->orderBy('created_at', 'desc');
-        } else {
-            // Non-admin users only see approved events
-            $query->where('status', 'approved')->orderBy('start_at');
-        }
+        $page = $request->get('page', 1);
         
-        return $query->limit($limit)->get();
+        $cacheKey = 'events:' . ($user ? $user->role : 'guest') . ':' . $page . ':' . $limit;
+        
+        return Cache::remember($cacheKey, 300, function () use ($user, $limit, $page) {
+            $query = Event::with(['organizer:id,name'])
+                ->select(['id', 'title', 'description', 'start_at', 'end_at', 'location', 'category', 'status', 'organizer_id', 'capacity', 'created_at'])
+                ->withCount('registrations');
+
+            if ($user && $user->role === 'admin') {
+                $query->orderBy('created_at', 'desc');
+            } else {
+                $query->where('status', 'approved')
+                      ->where('start_at', '>=', now())
+                      ->orderBy('start_at');
+            }
+            
+            return $query->offset(($page - 1) * $limit)
+                        ->limit($limit)
+                        ->get();
+        });
     }
     public function publicIndex(Request $request)
     {
         $limit = $request->get('limit', 10);
         
-        return Event::with('organizer:id,name')
-            ->where('status', 'approved')
-            ->where('start_at', '>=', now())
-            ->orderBy('start_at')
-            ->limit($limit)
-            ->get();
+        return Cache::remember('public_events:' . $limit, 600, function () use ($limit) {
+            return Event::with('organizer:id,name')
+                ->select(['id', 'title', 'description', 'start_at', 'location', 'category', 'organizer_id'])
+                ->where('status', 'approved')
+                ->where('start_at', '>=', now())
+                ->orderBy('start_at')
+                ->limit($limit)
+                ->get();
+        });
     }
 
     public function show(Event $event)
@@ -50,7 +61,7 @@ class EventController extends Controller
     public function myEvents(Request $request)
     {
         $user = $request->user();
-        return Event::with('registrations', 'feedbacks')
+        return Event::with(['registrations', 'feedbacks', 'organizer:id,name'])
                     ->where('organizer_id', $user->id)
                     ->orderByDesc('start_at')
                     ->get();
@@ -66,12 +77,19 @@ class EventController extends Controller
             'location'=>'nullable|string',
             'category'=>'nullable|string',
             'capacity'=>'nullable|integer',
-            'featured'=>'boolean',
+            'featured'=>'nullable|boolean',
         ]);
 
         $data['organizer_id'] = $request->user()->id;
+        $data['status'] = 'pending';
+        
         $event = Event::create($data);
-        return response()->json($event,201);
+        
+        // Clear relevant caches
+        Cache::forget('events:admin:1:20');
+        Cache::forget('public_events:10');
+        
+        return response()->json($event, 201);
     }
 
     public function update(Request $request, Event $event)
@@ -84,19 +102,22 @@ class EventController extends Controller
             'end_at'=>'sometimes|date|after:start_at',
             'location'=>'nullable|string',
             'category'=>'nullable|string',
-            'capacity'=>'nullable|integer',
-            'featured'=>'boolean',
-            'status'=>'in:pending,approved,rejected'
+            'capacity'=>'nullable|integer'
         ]);
 
         $event->update($data);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
-    public function destroy(Event $event)
+    public function destroy(Request $request, Event $event)
     {
-        $this->authorize('delete',$event); // optional
+        $user = $request->user();
+        
+        // Allow admin to delete any event, organizer can only delete their own
+        if ($user->role !== 'admin' && $event->organizer_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        
         $event->delete();
         return response()->json(['message'=>'Deleted']);
     }
@@ -120,14 +141,12 @@ class EventController extends Controller
     public function approveEvent(Event $event)
     {
         $event->update(['status' => 'approved']);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 
     public function rejectEvent(Event $event)
     {
         $event->update(['status' => 'rejected']);
-        broadcast(new EventUpdated($event));
         return response()->json($event);
     }
 

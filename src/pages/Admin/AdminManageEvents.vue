@@ -81,7 +81,8 @@
         <div v-for="event in paginatedEvents" :key="event.id" class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
           <!-- Event Image/Poster -->
           <div class="h-48 bg-gradient-to-br from-indigo-400 to-purple-600 relative overflow-hidden">
-            <div class="flex items-center justify-center h-full text-white">
+            <img v-if="event.poster" :src="event.poster" :alt="event.title" class="w-full h-full object-cover" />
+            <div v-else class="flex items-center justify-center h-full text-white">
               <svg class="w-16 h-16 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -227,32 +228,35 @@ export default {
   methods: {
     async approveEvent(event) {
       try {
-        await this.$http.put(`/api/events/${event.id}/approve`)
+        console.log('Approving event:', event.id)
+        const response = await this.$http.put(`/api/events/${event.id}/approve`)
+        console.log('Approve response:', response)
         event.status = 'approved'
         alert(`Event "${event.title}" approved successfully!`)
       } catch (err) {
-        console.error(err)
-        alert('Failed to approve event')
+        console.error('Approve error:', err.response || err)
+        alert(`Failed to approve event: ${err.response?.data?.message || err.message}`)
       }
     },
     async rejectEvent(event) {
       try {
-        await this.$http.put(`/api/events/${event.id}/reject`)
+        console.log('Rejecting event:', event.id)
+        const response = await this.$http.put(`/api/events/${event.id}/reject`)
+        console.log('Reject response:', response)
         event.status = 'rejected'
         alert(`Event "${event.title}" rejected`)
       } catch (err) {
-        console.error(err)
-        alert('Failed to reject event')
+        console.error('Reject error:', err.response || err)
+        alert(`Failed to reject event: ${err.response?.data?.message || err.message}`)
       }
     },
     viewEvent(event) {
-      // Navigate to event details or open modal
-      alert(`Viewing event: ${event.title}`)
+      this.$router.push(`/admin/event/${event.id}`)
     },
     async deleteEvent(event) {
       if (confirm(`Are you sure you want to delete "${event.title}"?`)) {
         try {
-          // API call to delete event
+          await this.$http.delete(`/api/events/${event.id}`)
           this.events = this.events.filter(e => e.id !== event.id)
           alert('Event deleted successfully')
         } catch (err) {
@@ -281,7 +285,8 @@ export default {
           status: event.status || 'pending',
           category: event.category || 'General',
           location: event.location || 'TBD',
-          registrations: event.registrations?.length || 0
+          registrations: event.registrations?.length || 0,
+          poster: event.poster_path ? `http://localhost:8000/storage/${event.poster_path}` : null
         }))
       } catch (err) {
         console.error('Failed to load events:', err)

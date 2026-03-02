@@ -5,14 +5,17 @@ import axios from 'axios'
 import './assets/tailwind.css'
 import http from './http'
 import store from './store'
+import { registerSW } from './utils/serviceWorker'
 
 Vue.config.productionTip = false
 Vue.prototype.$http = http
 
 // axios defaults
-axios.defaults.baseURL = 'http://localhost:8000'   // your Laravel backend URL
-axios.defaults.withCredentials = true             // needed for sanctum cookies
-// Remove duplicate - already set above with Vue.prototype.$http = http
+axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.withCredentials = true
+
+// Register service worker
+registerSW()
 
 new Vue({
   router,
